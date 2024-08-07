@@ -5,17 +5,22 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "rollup -c"
+    "build": "rimraf dist && rollup -c"
   },
   "keywords": [],
   "author": "peng-xiao-shuai",
   "license": "ISC",
   "dependencies": {
     "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
+    "@ton/core": "^0.56.3",
+    "@tonconnect/ui": "^2.0.6",
     "@types/node": "^22.1.0",
     "rollup": "^4.20.0",
+    "rollup-plugin-polyfill-node": "^0.13.0",
     "rollup-plugin-typescript2": "^0.36.0",
+    "ton": "^13.9.0",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
