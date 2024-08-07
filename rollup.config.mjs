@@ -8,7 +8,7 @@ import { terser } from 'rollup-plugin-terser'
 export default {
   input: 'src/index.ts', // 你的入口文件
   output: {
-    file: 'dist/bundle.js',
+    file: 'dist/telegram-sdk.js',
     format: 'iife', // 使用 IIFE 以便在浏览器中直接运行
     name: 'TelegramSDK', // 你的库名
   },
