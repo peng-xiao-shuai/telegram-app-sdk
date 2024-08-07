@@ -52,7 +52,7 @@ export default class TG_SDK {
         }?startapp=${base64UrlEncode(str)}&text=${text || ''}`
       )
     );
-
+    log('分享成功');
     cb?.();
   }
 
@@ -168,7 +168,15 @@ export default class TG_SDK {
         }
       } else if (button_id === buttons[1].id) {
         this.WebApp.HapticFeedback.impactOccurred('light');
+        log('开始支付 ' + buttons[1]);
         options?.start?.(buttons[1]);
+
+        if (this.debug) {
+          log('支付状态 ' + 'paid');
+          options?.result?.('paid');
+          return;
+        }
+
         try {
           // const { result } = await fetch(
           //   'https://www.tgaipet.com/restApi/recharge/createOrderFromStar',
@@ -191,6 +199,7 @@ export default class TG_SDK {
               } else if (status === 'cancelled') {
                 this.WebApp.HapticFeedback.notificationOccurred('warning');
               }
+              log('支付状态 ' + status);
               options?.result?.(status);
             }
           );
@@ -222,9 +231,11 @@ export default class TG_SDK {
     /**
      * 开始支付
      */
+    log('开始支付', button);
     options?.start?.(button);
 
     if (this.debug) {
+      log('支付状态 paid');
       options?.result?.('paid');
       this.WebApp.HapticFeedback.notificationOccurred('success');
       return;
@@ -233,9 +244,11 @@ export default class TG_SDK {
     try {
       const boc = await this.sendTransaction();
 
+      log('支付状态 paid');
       options?.result?.('paid');
       this.WebApp.HapticFeedback.notificationOccurred('success');
     } catch (err) {
+      log('支付状态 failed');
       options?.result?.('failed');
       this.WebApp.HapticFeedback.notificationOccurred('error');
     }
