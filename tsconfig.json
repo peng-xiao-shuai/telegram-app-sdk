@@ -34,16 +34,12 @@
     "entryPoints": [
       "./src/index.ts"
     ],
-    "includes": [
-      "src/*.ts"
-    ],
     "out": "docs",
     "includeVersion": true,
     "disableSources": false
   },
   "include": [
     "src",
-    "typings"
   ],
   "exclude": [
     "env.d.ts",
