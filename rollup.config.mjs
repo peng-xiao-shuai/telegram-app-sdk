@@ -3,6 +3,7 @@ import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
 import polyfillNode from 'rollup-plugin-polyfill-node'
+import { terser } from 'rollup-plugin-terser'
 
 export default {
   input: 'src/index.ts', // 你的入口文件
@@ -20,6 +21,6 @@ export default {
     json(),
     typescript(),
     polyfillNode(),
-    // terser(), // 可选，压缩输出文件
+    terser(),
   ],
 }
