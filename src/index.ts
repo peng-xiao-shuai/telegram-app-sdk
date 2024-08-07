@@ -1,5 +1,10 @@
-import TG_SDK from './core';
+import { TG_SDKOptions, TG_SDK } from './core';
+export type { TG_SDKOptions, TG_Utils, TG_SDK } from './core';
 
+let TGConfig: TG_SDKOptions;
+window._setTelegramSDKConfig = (config: TG_SDKOptions) => {
+  TGConfig = config;
+};
 // 创建 script
 const script = document.createElement('script');
 script.src = 'https://telegram.org/js/telegram-web-app.js';
@@ -17,13 +22,13 @@ script.onload = () => {
      */
     WebApp.enableClosingConfirmation();
 
-    window.setSDKConfig = (config: TG_SDKOptions) => {
+    if (!window.TG_SDK) {
       window.TG_SDK = new TG_SDK({
-        ...config,
+        ...TGConfig,
         botName: 'pxs-test-bot',
         appName: 'test',
       });
-    };
+    }
   } else {
     throw new Error(
       '无法读取 Telegram 对象，请先引入 https://telegram.org/js/telegram-web-app.js'

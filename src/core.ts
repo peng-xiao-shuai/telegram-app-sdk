@@ -1,6 +1,125 @@
 import { base64UrlEncode, decodeFromBase64Url } from './utils/string-transform';
-import { TonConnectUI, CHAIN } from '@tonconnect/ui';
+import { TonConnectUI, CHAIN, TonConnectUiCreateOptions } from '@tonconnect/ui';
 import { beginCell } from '@ton/core';
+
+export interface TG_SDKOptions {
+  /**
+   * 机器人名称
+   */
+  botName: string;
+  /**
+   * 小程序名称
+   */
+  appName: string;
+  /**
+   * 是否开启调试
+   * @default false
+   */
+  debug?: boolean;
+  /**
+   * ton 配置
+   * @see https://ton-connect.github.io/sdk/types/_tonconnect_ui.TonConnectUiCreateOptions.html
+   */
+  tonConfig: TonConnectUiCreateOptions;
+}
+export namespace TG_Utils {
+  export interface ParamsPopupButtonBase {
+    id: 'Ton' | 'Star' | 'Close';
+    type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
+  }
+  export interface ParamsPopupButtonWithText extends ParamsPopupButtonBase {
+    text: string;
+    type?: 'default' | 'destructive';
+  }
+  export type ParamsPopupButton =
+    | ParamsPopupButtonWithText
+    | (ParamsPopupButtonBase & {
+        type: 'ok' | 'cancel' | 'close';
+        text?: string;
+      });
+
+  /**
+   * 支付状态
+   */
+  export type InvoiceStatus = 'paid' | 'cancelled' | 'failed' | 'pending';
+
+  export type Login = (
+    /**
+     * 登录成功或者失败回调函数
+     */
+    cb?: (status: 'success' | 'fail') => void
+  ) => void;
+  export type Share = ({
+    params,
+    text,
+  }: {
+    /**
+     * 最后会转 json 在转 base64
+     */
+    params: object;
+    /**
+     * 分享出去后的文字内容 默认为空
+     */
+    text?: string;
+    /**
+     * 回调函数
+     */
+    cb?: () => void;
+  }) => void;
+
+  export type GetStartAppParams = () => Record<string, any>;
+
+  export type OpenPayPopup = ({
+    title,
+    message,
+    options,
+  }: {
+    /**
+     * 要在弹出标题中显示的文本，0-64 个字符。
+     */
+    title?: string;
+    /**
+     * 要在弹出窗口正文中显示的消息，1-256 个字符。
+     */
+    message: string;
+    /**
+     * 点击支付后状态
+     */
+    options?: {
+      /**
+       * 开始支付回调
+       */
+      start?: (button: TG_Utils.ParamsPopupButton) => void;
+      /**
+       * 支付结果回调
+       */
+      result?: (status: TG_Utils.InvoiceStatus) => void;
+    };
+  }) => void;
+}
+
+export declare interface TG_SDK {
+  AppConfigEnv: {
+    TG_BOT_NAME: string;
+    TG_APP_NAME: string;
+  };
+  debug: boolean;
+  /**
+   * TON UI 实例
+   */
+  login(cb: Parameters<TG_Utils.Login>[0]): ReturnType<TG_Utils.Login>;
+  share({
+    params,
+    text,
+    cb,
+  }: Parameters<TG_Utils.Share>[0]): ReturnType<TG_Utils.Share>;
+  getStartAppParams(): ReturnType<TG_Utils.GetStartAppParams>;
+  openPayPopup({
+    title,
+    message,
+    options,
+  }: Parameters<TG_Utils.OpenPayPopup>[0]): ReturnType<TG_Utils.OpenPayPopup>;
+}
 
 let { log } = window.console;
 const onError = (error: unknown) => {
@@ -11,17 +130,10 @@ const onError = (error: unknown) => {
   }
 };
 
-export default class TG_SDK {
+export class TG_SDK implements TG_SDK {
   readonly WebApp: any;
-  AppConfigEnv: {
-    TG_BOT_NAME: string;
-    TG_APP_NAME: string;
-  };
-  debug: boolean;
-  /**
-   * TON UI 实例
-   */
   readonly tonConnectUI: TonConnectUI;
+
   constructor({ botName, appName, debug, tonConfig }: TG_SDKOptions) {
     if (debug !== true) {
       log = (msg: string) => {};
@@ -33,6 +145,19 @@ export default class TG_SDK {
       TG_APP_NAME: appName,
     };
     this.tonConnectUI = new TonConnectUI(tonConfig);
+  }
+
+  /**
+   * 登录
+   * @param {Parameters<TG_Utils.Login>[0]} cb
+   */
+  login(cb: Parameters<TG_Utils.Login>[0]) {
+    if (this.debug) {
+      log('登录成功');
+      cb?.('success');
+    }
+    cb?.('success');
+    // TODO
   }
 
   /**
@@ -59,7 +184,7 @@ export default class TG_SDK {
   /**
    * 获取Url中 start_app 数据
    */
-  get getStartAppParams(): ReturnType<TG_Utils.GetStartAppParams> {
+  getStartAppParams(): ReturnType<TG_Utils.GetStartAppParams> {
     const params = JSON.parse(
       this.WebApp.initDataUnsafe.start_param
         ? decodeFromBase64Url(this.WebApp.initDataUnsafe.start_param)

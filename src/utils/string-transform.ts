@@ -1,3 +1,5 @@
+type Indexes<T = any> = { [s: string | number]: T };
+
 /**
  * 字符串 token 转对象
  */
