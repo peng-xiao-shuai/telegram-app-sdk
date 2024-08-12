@@ -4,6 +4,10 @@ import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
 import polyfillNode from 'rollup-plugin-polyfill-node'
 import { terser } from 'rollup-plugin-terser'
+import replace from '@rollup/plugin-replace';
+import dotenv from 'dotenv';
+// 加载 .env 文件
+dotenv.config();
 
 export default {
   input: 'src/index.ts', // 你的入口文件
@@ -16,6 +20,10 @@ export default {
     resolve({
       browser: true,
       preferBuiltins: false,
+    }),
+    replace({
+      preventAssignment: true, // 避免意外替换过程中的赋值操作
+      'process.env.API_BASE': JSON.stringify(process.env.API_BASE),
     }),
     commonjs(),
     json(),

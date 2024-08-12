@@ -131,7 +131,7 @@ const onError = (error: unknown) => {
     return new Error(String(error));
   }
 };
-const APIBase = 'http://192.168.2.214:8888';
+const APIBase = process.env.API_BASE;
 
 export class TG_SDK {
   AppConfigEnv: {
