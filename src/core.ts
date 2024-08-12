@@ -4,13 +4,17 @@ import { beginCell } from '@ton/core';
 
 export interface TG_SDKOptions {
   /**
+   * id 标识
+   */
+  appid: string;
+  /**
    * 机器人名称
    */
-  botName: string;
+  botName?: string;
   /**
    * 小程序名称
    */
-  appName: string;
+  appName?: string;
   /**
    * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功
    * @default false
@@ -22,7 +26,10 @@ export interface TG_SDKOptions {
    */
   tonConfig: TonConnectUiCreateOptions;
 }
-export namespace TG_Utils {
+/**
+ * TG_SDK 类中所需的类型命名空间
+ */
+export namespace TG_SDK_NAMESPACE {
   export interface ParamsPopupButtonBase {
     id: 'Ton' | 'Star' | 'Close';
     type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
@@ -45,18 +52,38 @@ cancelled）
   export type InvoiceStatus = 'paid' | 'cancelled' | 'failed' | 'pending';
 
   /**
-   * 登录
+   * 登录成功回调载荷
    */
-  export type Login = (
-    /**
-     * 登录成功或者失败回调函数
-     */
-    cb?: (status: 'success' | 'fail') => void
-  ) => void;
+  export interface LoginSuccessPayload {
+    status: 'success';
+    data: {
+      /**
+       * 过期时间（时间戳）
+       */
+      expired_at: number;
+      token: string;
+      user_id: string;
+    };
+  }
   /**
-   * 分享
+   * 登录失败回调载荷
    */
-  export type Share = (payload: {
+  export interface LoginFailPayload {
+    status: 'fail';
+    /**
+     * catch 捕获到的错误信息
+     */
+    data: any;
+  }
+
+  /**
+   * 登录成功或者失败回调函数
+   */
+  export interface LoginPayload {
+    cb?: (payload: LoginSuccessPayload | LoginFailPayload) => void;
+  }
+
+  export interface SharePayload {
     /**
      * 最后会转 json 在转 base64
      */
@@ -69,17 +96,12 @@ cancelled）
      * 回调函数
      */
     cb?: () => void;
-  }) => void;
-
-  /**
-   * 获取分享链接进来的参数
-   */
-  export type GetStartAppParams = () => Record<string, any>;
+  }
 
   /**
    * 打开支付弹窗
    */
-  export type OpenPayPopup = (payload: {
+  export interface OpenPayPopupPayload {
     /**
      * 要在弹出标题中显示的文本，0-64 个字符。
      */
@@ -92,13 +114,13 @@ cancelled）
       /**
        * 开始支付回调
        */
-      start?: (button: TG_Utils.ParamsPopupButton) => void;
+      start?: (button: TG_SDK_NAMESPACE.ParamsPopupButton) => void;
       /**
        * 支付结果回调
        */
-      result?: (status: TG_Utils.InvoiceStatus) => void;
+      result?: (status: TG_SDK_NAMESPACE.InvoiceStatus) => void;
     };
-  }) => void;
+  }
 }
 
 let { log } = window.console;
@@ -109,6 +131,7 @@ const onError = (error: unknown) => {
     return new Error(String(error));
   }
 };
+const APIBase = 'http://192.168.2.214:8888';
 
 export class TG_SDK {
   AppConfigEnv: {
@@ -123,6 +146,7 @@ export class TG_SDK {
    * TG WebApp 对象，等同于 window.Telegram.WebApp
    */
   readonly WebApp: any;
+  readonly APPID: string;
   /**
    * Ton UI 实例
    */
@@ -131,45 +155,57 @@ export class TG_SDK {
   /**
    * @param {TG_SDKOptions} payload
    */
-  constructor({ botName, appName, debug, tonConfig }: TG_SDKOptions) {
+  constructor({ appid, botName, appName, debug, tonConfig }: TG_SDKOptions) {
     if (debug !== true) {
       log = (msg: string) => {};
     }
     this.debug = debug || false;
     this.WebApp = window.Telegram.WebApp;
     this.AppConfigEnv = {
-      TG_BOT_NAME: botName,
-      TG_APP_NAME: appName,
+      TG_BOT_NAME: botName || 'pxs-test-bot',
+      TG_APP_NAME: appName || 'test',
     };
+    this.APPID = appid;
     this.tonConnectUI = new TonConnectUI(tonConfig);
   }
 
   /**
    * 登录
-   * @param {Parameters<TG_Utils.Login>[0]} cb 登录回调函数
+   * @param {TG_SDK_NAMESPACE.LoginPayload} cb 登录回调函数
    * @example
    * window.TG_SDK.login()
-   * window.TG_SDK.login((state) => {})
+   * window.TG_SDK.login((payload) => {})
    */
-  login(cb: Parameters<TG_Utils.Login>[0]) {
-    if (this.debug) {
-      log('登录成功');
-      cb?.('success');
+  async login({ cb }: TG_SDK_NAMESPACE.LoginPayload) {
+    try {
+      const response = await fetch(APIBase + '/saasapi/jssdk/user/v1/login', {
+        method: 'POST',
+        body: JSON.stringify({ app_id: this.APPID }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `tma ${this.WebApp.initData}`,
+        },
+      }).then((res) => res.json());
+
+      cb?.({
+        status: 'success',
+        data: response,
+      });
+    } catch (error) {
+      cb?.({
+        status: 'fail',
+        data: error,
+      });
+      throw onError(error);
     }
-    cb?.('success');
-    // TODO
   }
   /**
    * 分享
-   * @param {Parameters<TG_Utils.Share>[0]} payload
+   * @param {Parameters<TG_SDK_NAMESPACE.SharePayload>[0]} payload
    * @example
    * window.TG_SDK.share({params: {id: 1}})
    */
-  share({
-    params,
-    text,
-    cb,
-  }: Parameters<TG_Utils.Share>[0]): ReturnType<TG_Utils.Share> {
+  share({ params, text, cb }: TG_SDK_NAMESPACE.SharePayload): void {
     const str = JSON.stringify(params);
     this.WebApp.openTelegramLink(
       encodeURI(
@@ -186,7 +222,7 @@ export class TG_SDK {
    * @example
    * window.TG_SDK.getStartAppParams()
    */
-  getStartAppParams(): ReturnType<TG_Utils.GetStartAppParams> {
+  getStartAppParams(): Record<string, any> {
     const params = JSON.parse(
       this.WebApp.initDataUnsafe.start_param
         ? decodeFromBase64Url(this.WebApp.initDataUnsafe.start_param)
@@ -196,7 +232,7 @@ export class TG_SDK {
   }
   /**
    * 打开 TG 支付弹窗
-   * @param {Parameters<TG_Utils.OpenPayPopup>[0]} payload
+   * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload} payload
    * @example
    * window.TG_SDK.openPayPopup({message: ''})
    */
@@ -204,8 +240,8 @@ export class TG_SDK {
     title,
     message,
     options,
-  }: Parameters<TG_Utils.OpenPayPopup>[0]): ReturnType<TG_Utils.OpenPayPopup> {
-    const buttons: TG_Utils.ParamsPopupButton[] = [
+  }: TG_SDK_NAMESPACE.OpenPayPopupPayload): void {
+    const buttons: TG_SDK_NAMESPACE.ParamsPopupButton[] = [
       {
         id: 'Ton',
         type: 'default',
@@ -231,7 +267,7 @@ export class TG_SDK {
       buttons.splice(1, 1);
     }
 
-    const handle = async (button_id: TG_Utils.ParamsPopupButton['id']) => {
+    const handle = async (button_id: TG_SDK_NAMESPACE.ParamsPopupButton['id']) => {
       if (button_id === buttons[0].id) {
         this.WebApp.HapticFeedback.impactOccurred('light');
 
@@ -319,7 +355,7 @@ export class TG_SDK {
 
           this.WebApp.openInvoice(
             'https://t.me/$-gi_agJAiEmPBwAAVrZ2d9SzLg4',
-            (status: TG_Utils.InvoiceStatus) => {
+            (status: TG_SDK_NAMESPACE.InvoiceStatus) => {
               if (status == 'paid') {
                 this.WebApp.HapticFeedback.notificationOccurred('success');
               } else if (status == 'failed') {
@@ -349,12 +385,12 @@ export class TG_SDK {
 
   /**
    * ton 支付
-   * @param {Parameters<TG_Utils.OpenPayPopup>[0]['options']} options
-   * @param {TG_Utils.ParamsPopupButton} button
+   * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload['options']} options
+   * @param {TG_SDK_NAMESPACE.ParamsPopupButton} button
    */
   private async tonTransaction(
-    options: Parameters<TG_Utils.OpenPayPopup>[0]['options'],
-    button: TG_Utils.ParamsPopupButton
+    options: TG_SDK_NAMESPACE.OpenPayPopupPayload['options'],
+    button: TG_SDK_NAMESPACE.ParamsPopupButton
   ) {
     /**
      * 开始支付
