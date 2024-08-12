@@ -1,6 +1,7 @@
 import { base64UrlEncode, decodeFromBase64Url } from './utils/string-transform';
 import { TonConnectUI, CHAIN, TonConnectUiCreateOptions } from '@tonconnect/ui';
 import { beginCell } from '@ton/core';
+import { version } from '../package.json';
 
 export interface TG_SDKOptions {
   /**
@@ -152,6 +153,8 @@ export class TG_SDK {
    */
   readonly tonConnectUI: TonConnectUI;
 
+  readonly version: string
+
   /**
    * @param {TG_SDKOptions} payload
    */
@@ -167,6 +170,7 @@ export class TG_SDK {
     };
     this.APPID = appid;
     this.tonConnectUI = new TonConnectUI(tonConfig);
+    this.version = version
   }
 
   /**
