@@ -17,7 +17,7 @@ export interface TG_SDKOptions {
    */
   appName?: string;
   /**
-   * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功
+   * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功(Ton 除外，因为 debug 情况下可以使用测试网络支付)
    * @default false
    */
   debug?: boolean;
@@ -32,7 +32,7 @@ export interface TG_SDKOptions {
  */
 export namespace TG_SDK_NAMESPACE {
   export interface ParamsPopupButtonBase {
-    id: 'Ton' | 'Star' | 'Close';
+    readonly id: 'Ton' | 'Star' | 'Close';
     type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
   }
   export interface ParamsPopupButtonWithText extends ParamsPopupButtonBase {
@@ -111,7 +111,15 @@ cancelled）
      * 要在弹出窗口正文中显示的消息，1-256 个字符。
      */
     message: string;
-    options?: {
+    options: {
+      /**
+       * 订单id
+       */
+      order_id: string;
+      /**
+       * 需要支付的 Ton 币数量
+       */
+      amount: string;
       /**
        * 开始支付回调
        */
@@ -140,7 +148,7 @@ export class TG_SDK {
     TG_APP_NAME: string;
   };
   /**
-   * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功
+   * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功(Ton 除外，因为 debug 情况下可以使用测试网络支付)
    */
   debug: boolean;
   /**
@@ -283,50 +291,10 @@ export class TG_SDK {
         } else {
           const unsubscribe = this.tonConnectUI.onStatusChange(async (w) => {
             log('w ==>', w);
-            // 先注释签名
-            // if (!w) {
-            //   // TonProofDemoApi.reset();
-            //   return;
-            // }
-
-            // if (w.account.chain === CHAIN.TESTNET) {
-            //   console.error('You cannot log in using the test network!');
-            //   return;
-            // }
-
-            // if (
-            //   w.connectItems?.tonProof &&
-            //   'proof' in w.connectItems.tonProof
-            // ) {
-            //   try {
-            //     // emitter.emit('setGlobalLoading', true);
-            //     // setIsCheck(false);
-            //     const { result, ok } = await TonProofDemoApi.checkProof(
-            //       w.connectItems.tonProof.proof,
-            //       w.account
-            //     );
-
-            //     if (ok) {
-            //       // setIsCheck(true);
-            //       // setDataLocal(result);
-            //       // emitter.emit('bindTonSuccess', {
-            //       //   ...w,
-            //       // });
-            //     } else {
-            //       // toast();
-            //       console.error('signature Check failure');
-
-            //       this.tonConnectUI.disconnect();
-            //     }
-            //     // emitter.emit('setGlobalLoading', false);
-            //   } catch (msg: any) {
-            //     log(msg, '错误捕获');
-
-            //     // toast(msg);
-            //     // emitter.emit('setGlobalLoading', false);
-            //     this.tonConnectUI.disconnect();
-            //   }
-            // }
+            if (!this.debug && w?.account.chain === CHAIN.TESTNET) {
+              console.error('You cannot log in using the test network!');
+              return;
+            }
 
             unsubscribe();
             this.tonTransaction(options, buttons[0]);
@@ -400,17 +368,29 @@ export class TG_SDK {
      * 开始支付
      */
     log('开始支付', button);
-    options?.start?.(button);
+    options.start?.(button);
 
     if (this.debug) {
       log('支付状态 paid');
-      options?.result?.('paid');
+      options.result?.('paid');
       this.WebApp.HapticFeedback.notificationOccurred('success');
       return;
     }
 
     try {
-      const boc = await this.sendTransaction();
+      const response = await fetch(APIBase + '/saasapi/jssdk/user/v1/login', {
+        method: 'POST',
+        body: JSON.stringify({ order_id: options.order_id, amount: options.amount, token: button.id }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }).then((res) => res.json());
+
+      const boc = await this.sendTransaction({
+        amount: options.amount,
+        payload: response.invoice_code,
+        recharge: response.recharge_address
+      });
 
       log('支付状态 paid');
       options?.result?.('paid');
@@ -425,18 +405,26 @@ export class TG_SDK {
   /**
    * 发起 Ton 交易
    */
-  private async sendTransaction() {
+  private async sendTransaction({
+    amount,
+    payload,
+    recharge
+  }: {
+    amount: string
+    payload: string
+    recharge: string
+  }) {
     try {
       const { boc } = await this.tonConnectUI.sendTransaction({
         validUntil: Math.floor(Date.now() / 1000) + 600,
         messages: [
           {
-            address: 'UQB4bOw8W7eNXp6fhMZNiivCiNxvZDF2sRRz6MtDyiMUUXQt',
-            amount: '100000',
+            address: recharge,
+            amount: this.toNanoton(amount),
             payload: beginCell()
               .storeUint(0, 32)
               // 设置消息
-              .storeStringTail(Date.now().toString())
+              .storeStringTail(payload)
               .endCell()
               .toBoc()
               .toString('base64'),
@@ -448,5 +436,10 @@ export class TG_SDK {
     } catch (error) {
       throw onError(error);
     }
+  }
+
+  private toNanoton(amountInToncoin: string | number) {
+    const NANOTON_PER_TONCOIN = 1_000_000_000;
+    return (BigInt(Number(amountInToncoin)) * BigInt(NANOTON_PER_TONCOIN)).toString();
   }
 }

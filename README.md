@@ -24,8 +24,10 @@ console.log(window.Telegram)
 console.log(window.TG_SDK)
 
 window._setTelegramSDKConfig({
-  // 开启调试模式，不会开启实际支付
+  // 开启调试模式，不会开启实际支付 (Ton 除外，因为 debug 情况下可以使用测试网络支付)
   debug: true, // 选填
+    // appid
+  appid: '',
   // 机器人名称
   botName: '',
   // 小程序名称
