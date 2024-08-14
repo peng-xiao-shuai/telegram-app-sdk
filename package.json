@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "rimraf dist && rollup -c",
+    "build": "pnpm build-js && pnpm build-docs",
+    "build-js": "rimraf dist && rollup -c",
     "build-docs": "npx typedoc --tsconfig ./tsconfig.json"
   },
   "keywords": [],

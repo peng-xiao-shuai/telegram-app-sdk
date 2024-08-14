@@ -13,7 +13,7 @@ export interface TG_SDKOptions {
      */
     appName?: string;
     /**
-     * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功
+     * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功(Ton 除外，因为 debug 情况下可以使用测试网络支付)
      * @default false
      */
     debug?: boolean;
@@ -28,7 +28,7 @@ export interface TG_SDKOptions {
  */
 export declare namespace TG_SDK_NAMESPACE {
     interface ParamsPopupButtonBase {
-        id: 'Ton' | 'Star' | 'Close';
+        readonly id: 'Ton' | 'Star' | 'Close';
         type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
     }
     interface ParamsPopupButtonWithText extends ParamsPopupButtonBase {
@@ -100,7 +100,15 @@ export declare namespace TG_SDK_NAMESPACE {
          * 要在弹出窗口正文中显示的消息，1-256 个字符。
          */
         message: string;
-        options?: {
+        options: {
+            /**
+             * 订单id
+             */
+            order_id: string;
+            /**
+             * 需要支付的 Ton 币数量
+             */
+            amount: string;
             /**
              * 开始支付回调
              */
@@ -118,7 +126,7 @@ export declare class TG_SDK {
         TG_APP_NAME: string;
     };
     /**
-     * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功
+     * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功(Ton 除外，因为 debug 情况下可以使用测试网络支付)
      */
     debug: boolean;
     /**
@@ -173,4 +181,5 @@ export declare class TG_SDK {
      * 发起 Ton 交易
      */
     private sendTransaction;
+    private toNanoton;
 }
