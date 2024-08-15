@@ -1,7 +1,30 @@
-import { base64UrlEncode, decodeFromBase64Url } from './utils/string-transform';
+import {
+  base64UrlEncode,
+  decodeFromBase64Url,
+  parseCookies,
+} from './utils/string-transform';
 import { TonConnectUI, CHAIN, TonConnectUiCreateOptions } from '@tonconnect/ui';
 import { beginCell } from '@ton/core';
 import { version } from '../package.json';
+import { closeModal, createButton, showModal } from './utils/model';
+
+const buttons: TG_SDK_NAMESPACE.ParamsPopupButton[] = [
+  {
+    id: 'Ton',
+    type: 'default',
+    text: 'Ton 支付',
+  },
+  {
+    id: 'Star',
+    type: 'default',
+    text: 'Star 支付',
+  },
+  {
+    id: 'Close',
+    type: 'close',
+    text: '',
+  },
+];
 
 export interface TG_SDKOptions {
   /**
@@ -9,9 +32,14 @@ export interface TG_SDKOptions {
    */
   appid: string;
   /**
- * user_id 在外部环境打开时由于获取不到 TG 用户信息，故此需要传入，仅在 debug 为 true 生效
- * @default 9527
- */
+   * token 在 cookie 中的 key 名称
+   * @default 'token'
+   */
+  tokenKey: string;
+  /**
+   * user_id 在外部环境打开时由于获取不到 TG 用户信息，故此需要传入，仅在 debug 为 true 生效
+   * @default 9527
+   */
   user_id?: number;
   /**
    * 机器人名称
@@ -138,7 +166,9 @@ cancelled）
 }
 
 let { log } = window.console;
-const onError = (error: unknown) => {
+const onError = (funName: string, error: unknown) => {
+  log(funName + '错误', error);
+
   if (error instanceof Error) {
     return new Error(error.message);
   } else {
@@ -166,13 +196,35 @@ export class TG_SDK {
    */
   readonly tonConnectUI: TonConnectUI;
 
-  readonly version: string
-  readonly params: Omit<TG_SDKOptions, 'appName' | 'appid' | 'botName' | 'debug' | 'tonConfig'>
+  readonly version: string;
+
+  /**
+   * 构造函数中除开 'appName' | 'appid' | 'botName' | 'debug' | 'tonConfig' 以外的值
+   */
+  readonly params: Omit<
+    TG_SDKOptions,
+    'appName' | 'appid' | 'botName' | 'debug' | 'tonConfig'
+  >;
+  private payOptions:
+    | TG_SDK_NAMESPACE.OpenPayPopupPayload['options']
+    | undefined;
+
+  /**
+   * 是否 TG 宿主环境中
+   */
+  readonly isTG: boolean;
 
   /**
    * @param {TG_SDKOptions} payload
    */
-  constructor({ appid, botName, appName, debug, tonConfig, ...params }: TG_SDKOptions) {
+  constructor({
+    appid,
+    botName,
+    appName,
+    debug,
+    tonConfig,
+    ...params
+  }: TG_SDKOptions) {
     if (debug !== true) {
       log = (msg: string) => {};
     }
@@ -184,8 +236,19 @@ export class TG_SDK {
     };
     this.APPID = appid;
     this.tonConnectUI = new TonConnectUI(tonConfig);
-    this.version = version
-    this.params = params
+    this.version = version;
+    this.params = params;
+    this.isTG = !!window.Telegram.WebApp.initData;
+
+    this.payOptions = undefined;
+
+    if (!this.isTG) {
+      createButton.call(this, buttons);
+    } else {
+      document.body.removeChild(
+        document.getElementsByClassName('tg-pay-popup-model')[0]
+      );
+    }
   }
 
   /**
@@ -196,8 +259,10 @@ export class TG_SDK {
    */
   async login({ cb }: TG_SDK_NAMESPACE.LoginPayload) {
     try {
-      const user_data = this.debug ? this.WebApp.initData ||  'testuser#' + (this.params.user_id || 9527) : this.WebApp.initData
-      
+      const user_data = this.debug
+        ? this.WebApp.initData || 'testuser#' + (this.params.user_id || 9527)
+        : this.WebApp.initData;
+
       const response = await fetch(APIBase + '/saasapi/jssdk/user/v1/login', {
         method: 'POST',
         body: JSON.stringify({ app_id: this.APPID }),
@@ -216,7 +281,7 @@ export class TG_SDK {
         status: 'fail',
         data: error,
       });
-      throw onError(error);
+      throw onError('login', error);
     }
   }
   /**
@@ -261,106 +326,102 @@ export class TG_SDK {
     message,
     options,
   }: TG_SDK_NAMESPACE.OpenPayPopupPayload): void {
-    const buttons: TG_SDK_NAMESPACE.ParamsPopupButton[] = [
-      {
-        id: 'Ton',
-        type: 'default',
-        text: 'Ton 支付',
-      },
-      {
-        id: 'Star',
-        type: 'default',
-        text: 'Star 支付',
-      },
-      {
-        id: 'Close',
-        type: 'close',
-        text: '',
-      },
-    ];
+    this.payOptions = options;
 
     /**
      * 校验是否支持 start
      */
-    if (Number(this.WebApp.version) <= 7.4) {
+    if (Number(this.WebApp.version) <= 7.4 && !this.debug) {
       log('Please upgrade your Telegram');
       buttons.splice(1, 1);
     }
 
-    const handle = async (button_id: TG_SDK_NAMESPACE.ParamsPopupButton['id']) => {
-      if (button_id === buttons[0].id) {
-        this.WebApp.HapticFeedback.impactOccurred('light');
+    if (this.isTG) {
+      this.WebApp.showPopup(
+        {
+          title,
+          message,
+          buttons,
+        },
+        this.popupCallback
+      );
+    } else {
+      showModal();
+    }
+  }
 
-        /**
-         * 是否链接，已连接直接支付
-         */
-        if (this.tonConnectUI.connected) {
-          this.tonTransaction(options, buttons[0]);
-        } else {
-          const unsubscribe = this.tonConnectUI.onStatusChange(async (w) => {
-            log('w ==>', w);
-            if (!this.debug && w?.account.chain === CHAIN.TESTNET) {
-              console.error('You cannot log in using the test network!');
-              return;
-            }
+  /**
+   * popup 回调函数，如果是 h5 则为点击事件函数
+   */
+  async popupCallback(button_id: TG_SDK_NAMESPACE.ParamsPopupButton['id']) {
+    if (button_id === buttons[0].id) {
+      this.WebApp.HapticFeedback.impactOccurred('light');
 
-            unsubscribe();
-            this.tonTransaction(options, buttons[0]);
-          });
+      /**
+       * 是否链接，已连接直接支付
+       */
+      if (this.tonConnectUI.connected) {
+        this.tonTransaction(this.payOptions!, buttons[0]);
+      } else {
+        const unsubscribe = this.tonConnectUI.onStatusChange(async (w) => {
+          log('w ==>', w);
+          if (!this.debug && w?.account.chain === CHAIN.TESTNET) {
+            console.error('You cannot log in using the test network!');
+            return;
+          }
 
-          this.tonConnectUI.openModal();
-        }
-      } else if (button_id === buttons[1].id) {
-        this.WebApp.HapticFeedback.impactOccurred('light');
-        log('开始支付 ' + buttons[1]);
-        options?.start?.(buttons[1]);
+          unsubscribe();
+          this.tonTransaction(this.payOptions!, buttons[0]);
+        });
 
-        if (this.debug) {
-          log('支付状态 ' + 'paid');
-          options?.result?.('paid');
-          return;
-        }
-
-        try {
-          // const { result } = await fetch(
-          //   'https://www.tgaipet.com/restApi/recharge/createOrderFromStar',
-          //   {
-          //     method: 'post',
-          //     // TODO
-          //     body: JSON.stringify({
-          //       packageId: '1',
-          //     }),
-          //   }
-          // );
-
-          this.WebApp.openInvoice(
-            'https://t.me/$-gi_agJAiEmPBwAAVrZ2d9SzLg4',
-            (status: TG_SDK_NAMESPACE.InvoiceStatus) => {
-              if (status == 'paid') {
-                this.WebApp.HapticFeedback.notificationOccurred('success');
-              } else if (status == 'failed') {
-                this.WebApp.HapticFeedback.notificationOccurred('error');
-              } else if (status === 'cancelled') {
-                this.WebApp.HapticFeedback.notificationOccurred('warning');
-              }
-              log('支付状态 ' + status);
-              options?.result?.(status);
-            }
-          );
-        } catch (error) {
-          throw onError(error);
-        }
+        const status = await this.tonConnectUI.openModal();
+        log(status);
       }
-    };
+    } else if (button_id === buttons[1].id) {
+      this.WebApp.HapticFeedback.impactOccurred('light');
+      log('开始支付 ' + buttons[1]);
+      this.payOptions?.start?.(buttons[1]);
 
-    this.WebApp.showPopup(
-      {
-        title,
-        message,
-        buttons,
-      },
-      handle
-    );
+      if (this.debug) {
+        log('支付状态 ' + 'paid');
+        this.payOptions?.result?.('paid');
+        return;
+      }
+
+      try {
+        // const { result } = await fetch(
+        //   'https://www.tgaipet.com/restApi/recharge/createOrderFromStar',
+        //   {
+        //     method: 'post',
+        //     // TODO
+        //     body: JSON.stringify({
+        //       packageId: '1',
+        //     }),
+        //   }
+        // );
+
+        this.WebApp.openInvoice(
+          'https://t.me/$-gi_agJAiEmPBwAAVrZ2d9SzLg4',
+          (status: TG_SDK_NAMESPACE.InvoiceStatus) => {
+            if (status == 'paid') {
+              this.WebApp.HapticFeedback.notificationOccurred('success');
+            } else if (status == 'failed') {
+              this.WebApp.HapticFeedback.notificationOccurred('error');
+            } else if (status === 'cancelled') {
+              this.WebApp.HapticFeedback.notificationOccurred('warning');
+            }
+            log('支付状态 ' + status);
+            this.payOptions?.result?.(status);
+          }
+        );
+      } catch (error) {
+        throw onError('openInvoice', error);
+      }
+    } else {
+      if (!this.isTG) {
+        closeModal();
+      }
+    }
   }
 
   /**
@@ -378,26 +439,26 @@ export class TG_SDK {
     log('开始支付', button);
     options.start?.(button);
 
-    if (this.debug) {
-      log('支付状态 paid');
-      options.result?.('paid');
-      this.WebApp.HapticFeedback.notificationOccurred('success');
-      return;
-    }
-
     try {
-      const response = await fetch(APIBase + '/saasapi/jssdk/user/v1/login', {
+      const response = await fetch(APIBase + '/saasapi/jssdk/pay/v1/order', {
         method: 'POST',
-        body: JSON.stringify({ order_id: options.order_id, amount: options.amount, token: button.id }),
+        body: JSON.stringify({
+          order_id: options.order_id,
+          amount: options.amount,
+          token: button.id,
+        }),
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${
+            this.Cookies[this.params.tokenKey || 'token']
+          }`,
         },
       }).then((res) => res.json());
 
       const boc = await this.sendTransaction({
         amount: options.amount,
         payload: response.invoice_code,
-        recharge: response.recharge_address
+        recharge: response.recharge_address,
       });
 
       log('支付状态 paid');
@@ -416,11 +477,11 @@ export class TG_SDK {
   private async sendTransaction({
     amount,
     payload,
-    recharge
+    recharge,
   }: {
-    amount: string
-    payload: string
-    recharge: string
+    amount: string;
+    payload: string;
+    recharge: string;
   }) {
     try {
       const { boc } = await this.tonConnectUI.sendTransaction({
@@ -428,7 +489,7 @@ export class TG_SDK {
         messages: [
           {
             address: recharge,
-            amount: this.toNanoton(amount),
+            amount: this.toNanoTon(amount),
             payload: beginCell()
               .storeUint(0, 32)
               // 设置消息
@@ -442,12 +503,19 @@ export class TG_SDK {
 
       return boc;
     } catch (error) {
-      throw onError(error);
+      throw onError('sendTransaction', error);
     }
   }
 
-  private toNanoton(amountInToncoin: string | number) {
+  private toNanoTon(amountInToncoin: string | number) {
     const NANOTON_PER_TONCOIN = 1_000_000_000;
-    return (BigInt(Number(amountInToncoin)) * BigInt(NANOTON_PER_TONCOIN)).toString();
+    return (
+      Number(amountInToncoin) * NANOTON_PER_TONCOIN
+    ).toString();
+  }
+
+  private get Cookies() {
+    const cookies = parseCookies(document.cookie);
+    return cookies;
   }
 }
