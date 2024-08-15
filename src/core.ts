@@ -9,6 +9,11 @@ export interface TG_SDKOptions {
    */
   appid: string;
   /**
+ * user_id 在外部环境打开时由于获取不到 TG 用户信息，故此需要传入，仅在 debug 为 true 生效
+ * @default 9527
+ */
+  user_id: number;
+  /**
    * 机器人名称
    */
   botName?: string;
@@ -150,7 +155,7 @@ export class TG_SDK {
   /**
    * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功(Ton 除外，因为 debug 情况下可以使用测试网络支付)
    */
-  debug: boolean;
+  readonly debug: boolean;
   /**
    * TG WebApp 对象，等同于 window.Telegram.WebApp
    */
@@ -162,11 +167,12 @@ export class TG_SDK {
   readonly tonConnectUI: TonConnectUI;
 
   readonly version: string
+  readonly params: Omit<TG_SDKOptions, 'appName' | 'appid' | 'botName' | 'debug' | 'tonConfig'>
 
   /**
    * @param {TG_SDKOptions} payload
    */
-  constructor({ appid, botName, appName, debug, tonConfig }: TG_SDKOptions) {
+  constructor({ appid, botName, appName, debug, tonConfig, ...params }: TG_SDKOptions) {
     if (debug !== true) {
       log = (msg: string) => {};
     }
@@ -179,6 +185,7 @@ export class TG_SDK {
     this.APPID = appid;
     this.tonConnectUI = new TonConnectUI(tonConfig);
     this.version = version
+    this.params = params
   }
 
   /**
@@ -190,12 +197,14 @@ export class TG_SDK {
    */
   async login({ cb }: TG_SDK_NAMESPACE.LoginPayload) {
     try {
+      const user_data = this.debug ? this.WebApp.initData ||  'testuser#' + (this.params.user_id || 9527) : this.WebApp.initData
+      
       const response = await fetch(APIBase + '/saasapi/jssdk/user/v1/login', {
         method: 'POST',
         body: JSON.stringify({ app_id: this.APPID }),
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `tma ${this.WebApp.initData}`,
+          Authorization: `tma ${user_data}`,
         },
       }).then((res) => res.json());
 
