@@ -5,10 +5,15 @@ export interface TG_SDKOptions {
      */
     appid: string;
     /**
-   * user_id 在外部环境打开时由于获取不到 TG 用户信息，故此需要传入，仅在 debug 为 true 生效
-   * @default 9527
-   */
-    user_id: number;
+     * token 在 cookie 中的 key 名称
+     * @default 'token'
+     */
+    tokenKey: string;
+    /**
+     * user_id 在外部环境打开时由于获取不到 TG 用户信息，故此需要传入，仅在 debug 为 true 生效
+     * @default 9527
+     */
+    user_id?: number;
     /**
      * 机器人名称
      */
@@ -77,7 +82,7 @@ export declare namespace TG_SDK_NAMESPACE {
      * 登录成功或者失败回调函数
      */
     interface LoginPayload {
-        cb?: (payload: LoginSuccessPayload | LoginFailPayload) => void;
+        cb: (payload: LoginSuccessPayload | LoginFailPayload) => void;
     }
     interface SharePayload {
         /**
@@ -144,7 +149,15 @@ export declare class TG_SDK {
      */
     readonly tonConnectUI: TonConnectUI;
     readonly version: string;
+    /**
+     * 构造函数中除开 'appName' | 'appid' | 'botName' | 'debug' | 'tonConfig' 以外的值
+     */
     readonly params: Omit<TG_SDKOptions, 'appName' | 'appid' | 'botName' | 'debug' | 'tonConfig'>;
+    private payOptions;
+    /**
+     * 是否 TG 宿主环境中
+     */
+    readonly isTG: boolean;
     /**
      * @param {TG_SDKOptions} payload
      */
@@ -153,8 +166,7 @@ export declare class TG_SDK {
      * 登录
      * @param {TG_SDK_NAMESPACE.LoginPayload} cb 登录回调函数
      * @example
-     * window.TG_SDK.login()
-     * window.TG_SDK.login((payload) => {})
+     * window.TG_SDK.login({ cb: () => {} })
      */
     login({ cb }: TG_SDK_NAMESPACE.LoginPayload): Promise<void>;
     /**
@@ -178,6 +190,10 @@ export declare class TG_SDK {
      */
     openPayPopup({ title, message, options, }: TG_SDK_NAMESPACE.OpenPayPopupPayload): void;
     /**
+     * popup 回调函数，如果是 h5 则为点击事件函数
+     */
+    popupCallback(button_id: TG_SDK_NAMESPACE.ParamsPopupButton['id']): Promise<void>;
+    /**
      * ton 支付
      * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload['options']} options
      * @param {TG_SDK_NAMESPACE.ParamsPopupButton} button
@@ -187,5 +203,6 @@ export declare class TG_SDK {
      * 发起 Ton 交易
      */
     private sendTransaction;
-    private toNanoton;
+    private toNanoTon;
+    private get Cookies();
 }
