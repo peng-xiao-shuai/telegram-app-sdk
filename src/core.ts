@@ -12,7 +12,7 @@ export interface TG_SDKOptions {
  * user_id 在外部环境打开时由于获取不到 TG 用户信息，故此需要传入，仅在 debug 为 true 生效
  * @default 9527
  */
-  user_id: number;
+  user_id?: number;
   /**
    * 机器人名称
    */
@@ -86,7 +86,7 @@ cancelled）
    * 登录成功或者失败回调函数
    */
   export interface LoginPayload {
-    cb?: (payload: LoginSuccessPayload | LoginFailPayload) => void;
+    cb: (payload: LoginSuccessPayload | LoginFailPayload) => void;
   }
 
   export interface SharePayload {
@@ -192,8 +192,7 @@ export class TG_SDK {
    * 登录
    * @param {TG_SDK_NAMESPACE.LoginPayload} cb 登录回调函数
    * @example
-   * window.TG_SDK.login()
-   * window.TG_SDK.login((payload) => {})
+   * window.TG_SDK.login({ cb: () => {} })
    */
   async login({ cb }: TG_SDK_NAMESPACE.LoginPayload) {
     try {
@@ -208,12 +207,12 @@ export class TG_SDK {
         },
       }).then((res) => res.json());
 
-      cb?.({
+      cb({
         status: 'success',
         data: response,
       });
     } catch (error) {
-      cb?.({
+      cb({
         status: 'fail',
         data: error,
       });
