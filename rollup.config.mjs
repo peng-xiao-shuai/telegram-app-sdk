@@ -6,8 +6,13 @@ import polyfillNode from 'rollup-plugin-polyfill-node'
 import { terser } from 'rollup-plugin-terser'
 import replace from '@rollup/plugin-replace';
 import dotenv from 'dotenv';
+import serve from 'rollup-plugin-serve'
+import livereload from 'rollup-plugin-livereload'
+
 // 加载 .env 文件
 dotenv.config();
+
+const production = !process.env.ROLLUP_WATCH
 
 export default {
   input: 'src/index.ts', // 你的入口文件
@@ -29,6 +34,16 @@ export default {
     json(),
     typescript(),
     polyfillNode(),
-    terser(),
+    !production && serve({
+      contentBase: ['dist'],
+      open: true,
+      host: 'localhost',
+      port: 4000,
+    }),
+    !production && livereload('dist'),
+    production && terser(),
   ],
+  watch: {
+    clearScreen: false
+  }
 }
