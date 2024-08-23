@@ -6,10 +6,12 @@
 
 ```diff
 interface OpenPayPopupPayload {
-  title: string;
+-  title?: string;
++  title: string;
   message: string;
   order_id: string;
   amount: string;
++  extra?: string;
   start?: (button: TG_SDK_NAMESPACE.ParamsPopupButton) => void;
   result?: ({
     status,
