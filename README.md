@@ -2,6 +2,8 @@
 
 `Telegram SDK` 是集成 `TelegramWebJs` 的基础合集
 
+### <a href="https://github.com/peng-xiao-shuai/telegram-sdk-docs/blob/gh-pages/CHANGE.md" target="_blank">查看更改日志</a>
+
 ### 开始
 
 将脚本添加到 HTML 文件：
@@ -24,14 +26,10 @@ console.log(window.Telegram)
 console.log(window.TG_SDK)
 
 window._setTelegramSDKConfig({
-  // 开启调试模式，不会开启实际支付 (Ton 除外，因为 debug 情况下可以使用测试网络支付)
+  // 开启调试模式
   debug: true, // 选填
     // appid
   appid: '',
-  // 机器人名称
-  botName: '',
-  // 小程序名称
-  appName: '',
   /**
    * ton 钱包配置
    * @see https://ton-connect.github.io/sdk/types/_tonconnect_ui.TonConnectUiCreateOptions.html
