@@ -20,6 +20,12 @@ Object.assign(modalOverlay.style, {
 
 // 创建弹窗
 const modal: HTMLDivElement = document.createElement('div');
+const modalTitle: HTMLDivElement = document.createElement('div');
+Object.assign(modalTitle.style, {
+  width: '100%',
+  textAlign: 'center',
+  color: 'black'
+});
 Object.assign(modal.style, {
   backgroundColor: 'white',
   borderRadius: '8px',
@@ -41,6 +47,7 @@ style.innerHTML = `
     background-color: #0056b3;
   }
 `;
+modal.appendChild(modalTitle);
 modal.appendChild(modalContent);
 modalOverlay.appendChild(modal);
 document.body.appendChild(modalOverlay);
@@ -70,7 +77,12 @@ export function createButton(this: any, buttons: TG_SDK_NAMESPACE.ParamsPopupBut
 }
 
 // 显示弹窗函数
-export function showModal(): void {
+export function showModal({
+  title,
+}: {
+  title: string
+}): void {
+  modalTitle.textContent = title
   modalOverlay.style.opacity = '1';
   modalOverlay.style.zIndex = '1000'
   setTimeout(() => {
