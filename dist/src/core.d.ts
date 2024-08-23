@@ -16,10 +16,12 @@ export interface TG_SDKOptions {
     user_id?: number;
     /**
      * 机器人名称
+     * @deprecated
      */
     botName?: string;
     /**
      * 小程序名称
+     * @deprecated
      */
     appName?: string;
     /**
