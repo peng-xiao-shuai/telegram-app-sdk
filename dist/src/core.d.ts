@@ -38,7 +38,7 @@ export interface TG_SDKOptions {
  */
 export declare namespace TG_SDK_NAMESPACE {
     interface ParamsPopupButtonBase {
-        readonly id: 'Ton' | 'Star' | 'Close';
+        readonly id: 'Ton' | 'Stars' | 'Close';
         type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
     }
     interface ParamsPopupButtonWithText extends ParamsPopupButtonBase {
@@ -105,29 +105,35 @@ export declare namespace TG_SDK_NAMESPACE {
         /**
          * 要在弹出标题中显示的文本，0-64 个字符。
          */
-        title?: string;
+        title: string;
         /**
          * 要在弹出窗口正文中显示的消息，1-256 个字符。
          */
         message: string;
-        options: {
-            /**
-             * 订单id
-             */
-            order_id: string;
-            /**
-             * 需要支付的 Ton 币数量
-             */
-            amount: string;
-            /**
-             * 开始支付回调
-             */
-            start?: (button: TG_SDK_NAMESPACE.ParamsPopupButton) => void;
-            /**
-             * 支付结果回调
-             */
-            result?: (status: TG_SDK_NAMESPACE.InvoiceStatus) => void;
-        };
+        /**
+         * 订单id
+         */
+        order_id: string;
+        /**
+         * 需要支付的 Ton 币数量 或者 Stars 数量 （Stars 时为正整数）
+         */
+        amount: string;
+        /**
+         * 扩展信息
+         * @default '''
+         */
+        extra?: string;
+        /**
+         * 开始支付回调
+         */
+        start?: (button: TG_SDK_NAMESPACE.ParamsPopupButton) => void;
+        /**
+         * 支付结果回调
+         */
+        result?: ({ status, extra, }: {
+            status: TG_SDK_NAMESPACE.InvoiceStatus;
+            extra: string | undefined;
+        }) => void;
     }
 }
 export declare class TG_SDK {
@@ -136,7 +142,7 @@ export declare class TG_SDK {
         TG_APP_NAME: string;
     };
     /**
-     * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功(Ton 除外，因为 debug 情况下可以使用测试网络支付)
+     * 是否开启调试模式，开启后 日志会显示在控制台
      */
     readonly debug: boolean;
     /**
@@ -184,11 +190,11 @@ export declare class TG_SDK {
     getStartAppParams(): Record<string, any>;
     /**
      * 打开 TG 支付弹窗
-     * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload} payload
+     * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload} options
      * @example
      * window.TG_SDK.openPayPopup({message: ''})
      */
-    openPayPopup({ title, message, options, }: TG_SDK_NAMESPACE.OpenPayPopupPayload): void;
+    openPayPopup(options: TG_SDK_NAMESPACE.OpenPayPopupPayload): void;
     /**
      * popup 回调函数，如果是 h5 则为点击事件函数
      */
