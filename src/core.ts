@@ -15,7 +15,7 @@ const buttons: TG_SDK_NAMESPACE.ParamsPopupButton[] = [
     text: 'Ton 支付',
   },
   {
-    id: 'Star',
+    id: 'Stars',
     type: 'default',
     text: 'Star 支付',
   },
@@ -65,7 +65,7 @@ export interface TG_SDKOptions {
  */
 export namespace TG_SDK_NAMESPACE {
   export interface ParamsPopupButtonBase {
-    readonly id: 'Ton' | 'Star' | 'Close';
+    readonly id: 'Ton' | 'Stars' | 'Close';
     type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
   }
   export interface ParamsPopupButtonWithText extends ParamsPopupButtonBase {
@@ -139,30 +139,50 @@ cancelled）
     /**
      * 要在弹出标题中显示的文本，0-64 个字符。
      */
-    title?: string;
+    title: string;
     /**
      * 要在弹出窗口正文中显示的消息，1-256 个字符。
      */
     message: string;
-    options: {
-      /**
-       * 订单id
-       */
-      order_id: string;
-      /**
-       * 需要支付的 Ton 币数量
-       */
-      amount: string;
-      /**
-       * 开始支付回调
-       */
-      start?: (button: TG_SDK_NAMESPACE.ParamsPopupButton) => void;
-      /**
-       * 支付结果回调
-       */
-      result?: (status: TG_SDK_NAMESPACE.InvoiceStatus) => void;
-    };
+    /**
+     * 订单id
+     */
+    order_id: string;
+    /**
+     * 需要支付的 Ton 币数量 或者 Stars 数量 （Stars 时为正整数）
+     */
+    amount: string;
+    /**
+     * 扩展信息
+     * @default '''
+     */
+    extra?: string;
+    /**
+     * 开始支付回调
+     */
+    start?: (button: TG_SDK_NAMESPACE.ParamsPopupButton) => void;
+    /**
+     * 支付结果回调
+     */
+    result?: ({
+      status,
+      extra,
+    }: {
+      status: TG_SDK_NAMESPACE.InvoiceStatus;
+      extra: string | undefined;
+    }) => void;
   }
+}
+
+interface CreateOrderResponse {
+  /**
+   * Ton 支付时为交易备注信息，Stars 时无用
+   */
+  invoice_code: string;
+  /**
+   * Ton 支付时为收款地址，Stars 时为发票链接
+   */
+  recharge_address: string;
 }
 
 let { log } = window.console;
@@ -183,7 +203,7 @@ export class TG_SDK {
     TG_APP_NAME: string;
   };
   /**
-   * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功(Ton 除外，因为 debug 情况下可以使用测试网络支付)
+   * 是否开启调试模式，开启后 日志会显示在控制台
    */
   readonly debug: boolean;
   /**
@@ -205,9 +225,7 @@ export class TG_SDK {
     TG_SDKOptions,
     'appName' | 'appid' | 'botName' | 'debug' | 'tonConfig'
   >;
-  private payOptions:
-    | TG_SDK_NAMESPACE.OpenPayPopupPayload['options']
-    | undefined;
+  private payOptions: TG_SDK_NAMESPACE.OpenPayPopupPayload | undefined;
 
   /**
    * 是否 TG 宿主环境中
@@ -317,15 +335,11 @@ export class TG_SDK {
   }
   /**
    * 打开 TG 支付弹窗
-   * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload} payload
+   * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload} options
    * @example
    * window.TG_SDK.openPayPopup({message: ''})
    */
-  openPayPopup({
-    title,
-    message,
-    options,
-  }: TG_SDK_NAMESPACE.OpenPayPopupPayload): void {
+  openPayPopup(options: TG_SDK_NAMESPACE.OpenPayPopupPayload): void {
     this.payOptions = options;
 
     /**
@@ -339,14 +353,16 @@ export class TG_SDK {
     if (this.isTG) {
       this.WebApp.showPopup(
         {
-          title,
-          message,
+          title: this.payOptions.title,
+          message: this.payOptions.message,
           buttons,
         },
-        this.popupCallback
+        this.popupCallback.bind(this)
       );
     } else {
-      showModal();
+      showModal({
+        title: this.payOptions.title || '',
+      });
     }
   }
 
@@ -354,6 +370,35 @@ export class TG_SDK {
    * popup 回调函数，如果是 h5 则为点击事件函数
    */
   async popupCallback(button_id: TG_SDK_NAMESPACE.ParamsPopupButton['id']) {
+    let response: CreateOrderResponse;
+
+    if (button_id !== 'Close') {
+      console.log(this.payOptions);
+
+      /**
+       * 创建支付订单
+       */
+      response = await (
+        await fetch(APIBase + '/saasapi/jssdk/pay/v1/order', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: this.payOptions!.title,
+            description: this.payOptions!.message,
+            order_id: this.payOptions!.order_id,
+            amount: this.payOptions!.amount,
+            extra: this.payOptions!.extra || '',
+            token: button_id,
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${
+              this.Cookies[this.params.tokenKey || 'token']
+            }`,
+          },
+        })
+      ).json();
+    }
+
     if (button_id === buttons[0].id) {
       this.WebApp.HapticFeedback.impactOccurred('light');
 
@@ -361,7 +406,7 @@ export class TG_SDK {
        * 是否链接，已连接直接支付
        */
       if (this.tonConnectUI.connected) {
-        this.tonTransaction(this.payOptions!, buttons[0]);
+        this.tonTransaction(buttons[0], response!);
       } else {
         const unsubscribe = this.tonConnectUI.onStatusChange(async (w) => {
           log('w ==>', w);
@@ -371,7 +416,7 @@ export class TG_SDK {
           }
 
           unsubscribe();
-          this.tonTransaction(this.payOptions!, buttons[0]);
+          this.tonTransaction(buttons[0], response);
         });
 
         const status = await this.tonConnectUI.openModal();
@@ -382,26 +427,9 @@ export class TG_SDK {
       log('开始支付 ' + buttons[1]);
       this.payOptions?.start?.(buttons[1]);
 
-      if (this.debug) {
-        log('支付状态 ' + 'paid');
-        this.payOptions?.result?.('paid');
-        return;
-      }
-
       try {
-        // const { result } = await fetch(
-        //   'https://www.tgaipet.com/restApi/recharge/createOrderFromStar',
-        //   {
-        //     method: 'post',
-        //     // TODO
-        //     body: JSON.stringify({
-        //       packageId: '1',
-        //     }),
-        //   }
-        // );
-
         this.WebApp.openInvoice(
-          'https://t.me/$-gi_agJAiEmPBwAAVrZ2d9SzLg4',
+          response!.recharge_address,
           (status: TG_SDK_NAMESPACE.InvoiceStatus) => {
             if (status == 'paid') {
               this.WebApp.HapticFeedback.notificationOccurred('success');
@@ -411,7 +439,10 @@ export class TG_SDK {
               this.WebApp.HapticFeedback.notificationOccurred('warning');
             }
             log('支付状态 ' + status);
-            this.payOptions?.result?.(status);
+            this.payOptions?.result?.({
+              status,
+              extra: this.payOptions.extra,
+            });
           }
         );
       } catch (error) {
@@ -430,43 +461,34 @@ export class TG_SDK {
    * @param {TG_SDK_NAMESPACE.ParamsPopupButton} button
    */
   private async tonTransaction(
-    options: TG_SDK_NAMESPACE.OpenPayPopupPayload['options'],
-    button: TG_SDK_NAMESPACE.ParamsPopupButton
+    button: TG_SDK_NAMESPACE.ParamsPopupButton,
+    response: CreateOrderResponse
   ) {
     /**
      * 开始支付
      */
     log('开始支付', button);
-    options.start?.(button);
+    this.payOptions?.start?.(button);
 
     try {
-      const response = await fetch(APIBase + '/saasapi/jssdk/pay/v1/order', {
-        method: 'POST',
-        body: JSON.stringify({
-          order_id: options.order_id,
-          amount: options.amount,
-          token: button.id,
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${
-            this.Cookies[this.params.tokenKey || 'token']
-          }`,
-        },
-      }).then((res) => res.json());
-
       const boc = await this.sendTransaction({
-        amount: options.amount,
+        amount: this.payOptions!.amount,
         payload: response.invoice_code,
         recharge: response.recharge_address,
       });
 
       log('支付状态 paid');
-      options?.result?.('paid');
+      this.payOptions?.result?.({
+        status: 'paid',
+        extra: this.payOptions.extra,
+      });
       this.WebApp.HapticFeedback.notificationOccurred('success');
     } catch (err) {
       log('支付状态 failed');
-      options?.result?.('failed');
+      this.payOptions?.result?.({
+        status: 'failed',
+        extra: this.payOptions.extra,
+      });
       this.WebApp.HapticFeedback.notificationOccurred('error');
     }
   }
@@ -509,9 +531,7 @@ export class TG_SDK {
 
   private toNanoTon(amountInToncoin: string | number) {
     const NANOTON_PER_TONCOIN = 1_000_000_000;
-    return (
-      Number(amountInToncoin) * NANOTON_PER_TONCOIN
-    ).toString();
+    return (Number(amountInToncoin) * NANOTON_PER_TONCOIN).toString();
   }
 
   private get Cookies() {
