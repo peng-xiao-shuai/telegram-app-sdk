@@ -1,5 +1,10 @@
 ## Telegram SDK 更新记录
 
+### 1.0.0-rc-20240827193850
+- `[Fix]:` 修复创建支付订单失败没有报错日志
+- `[Fix]:` 修复登录没有存储 `Token` 导致创建支付订单失败
+- `[Type]:` 更改 `TG_SDKOptions` 类型中 `tokenKey` 为非必填
+
 ### 1.0.0-beta.6
 
 - `openPayPopup` 函数第一项参数更改
