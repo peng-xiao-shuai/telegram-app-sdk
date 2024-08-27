@@ -122,6 +122,7 @@ cancelled）
   export interface SharePayload {
     /**
      * 最后会转 json 在转 base64
+     * @deprecated
      */
     params: object;
     /**
@@ -289,7 +290,7 @@ export class TG_SDK {
       const response: TG_SDK_NAMESPACE.LoginSuccessPayload['data'] =
         await fetch(APIBase + '/saasapi/jssdk/user/v1/login', {
           method: 'POST',
-          body: JSON.stringify({ app_id: this.APPID }),
+          body: JSON.stringify({ app_id: this.APPID, invite_code: this.StartData }),
           headers: {
             'Content-Type': 'application/json',
             Authorization: `tma ${user_data}`,
@@ -318,22 +319,34 @@ export class TG_SDK {
    * 分享
    * @param {Parameters<TG_SDK_NAMESPACE.SharePayload>[0]} payload
    * @example
-   * window.TG_SDK.share({params: {id: 1}})
+   * window.TG_SDK.share()
    */
-  share({ params, text, cb }: TG_SDK_NAMESPACE.SharePayload): void {
-    const str = JSON.stringify(params);
-    this.WebApp.openTelegramLink(
-      encodeURI(
-        `https://t.me/share/url?url=t.me/${this.AppConfigEnv.TG_BOT_NAME}/${
-          this.AppConfigEnv.TG_APP_NAME
-        }?startapp=${base64UrlEncode(str)}&text=${text || ''}`
-      )
-    );
-    log('分享成功');
-    cb?.();
+  async share({ text, cb }: TG_SDK_NAMESPACE.SharePayload) {
+    try {
+      const { link }: {link: string} =
+      await fetch(APIBase + '/saasapi/jssdk/user/v1/share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.Cookies[this.params.tokenKey!]}`,
+        },
+      }).then((res) => res.json());
+
+      this.WebApp.openTelegramLink(
+        encodeURI(
+          `https://t.me/share/url?url=${link}${text ? '&text=' : ''}`
+        )
+      );
+      log('分享成功');
+      cb?.();
+    } catch (error) {
+      log('分享失败');
+      throw onError('share', error)
+    }
   }
   /**
    * 获取通过分享链接进来的参数数据
+   * @deprecated 将在 1.0.0 正式版本删除
    * @example
    * window.TG_SDK.getStartAppParams()
    */
@@ -548,6 +561,10 @@ export class TG_SDK {
   private toNanoTon(amountInToncoin: string | number) {
     const NANOTON_PER_TONCOIN = 1_000_000_000;
     return (Number(amountInToncoin) * NANOTON_PER_TONCOIN).toString();
+  }
+
+  private get StartData() {
+    return this.WebApp.initDataUnsafe.start_param || ''
   }
 
   private get Cookies() {
