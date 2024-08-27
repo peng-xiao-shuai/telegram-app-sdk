@@ -89,6 +89,7 @@ export declare namespace TG_SDK_NAMESPACE {
     interface SharePayload {
         /**
          * 最后会转 json 在转 base64
+         * @deprecated
          */
         params: object;
         /**
@@ -181,11 +182,12 @@ export declare class TG_SDK {
      * 分享
      * @param {Parameters<TG_SDK_NAMESPACE.SharePayload>[0]} payload
      * @example
-     * window.TG_SDK.share({params: {id: 1}})
+     * window.TG_SDK.share()
      */
-    share({ params, text, cb }: TG_SDK_NAMESPACE.SharePayload): void;
+    share({ text, cb }: TG_SDK_NAMESPACE.SharePayload): Promise<void>;
     /**
      * 获取通过分享链接进来的参数数据
+     * @deprecated 将在 1.0.0 正式版本删除
      * @example
      * window.TG_SDK.getStartAppParams()
      */
@@ -212,6 +214,7 @@ export declare class TG_SDK {
      */
     private sendTransaction;
     private toNanoTon;
+    private get StartData();
     private get Cookies();
     private setCookies;
 }
