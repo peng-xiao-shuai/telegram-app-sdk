@@ -8,7 +8,7 @@ export interface TG_SDKOptions {
      * token 在 cookie 中的 key 名称
      * @default 'token'
      */
-    tokenKey: string;
+    tokenKey?: string;
     /**
      * user_id 在外部环境打开时由于获取不到 TG 用户信息，故此需要传入，仅在 debug 为 true 生效
      * @default 9527
@@ -213,4 +213,5 @@ export declare class TG_SDK {
     private sendTransaction;
     private toNanoTon;
     private get Cookies();
+    private setCookies;
 }
