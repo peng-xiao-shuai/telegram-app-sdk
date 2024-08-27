@@ -35,7 +35,7 @@ export interface TG_SDKOptions {
    * token 在 cookie 中的 key 名称
    * @default 'token'
    */
-  tokenKey: string;
+  tokenKey?: string;
   /**
    * user_id 在外部环境打开时由于获取不到 TG 用户信息，故此需要传入，仅在 debug 为 true 生效
    * @default 9527
@@ -257,7 +257,10 @@ export class TG_SDK {
     this.APPID = appid;
     this.tonConnectUI = new TonConnectUI(tonConfig);
     this.version = version;
-    this.params = params;
+    this.params = {
+      ...params,
+      tokenKey: params.tokenKey || 'token',
+    };
     this.isTG = !!window.Telegram.WebApp.initData;
 
     this.payOptions = undefined;
@@ -283,14 +286,21 @@ export class TG_SDK {
         ? this.WebApp.initData || 'testuser#' + (this.params.user_id || 9527)
         : this.WebApp.initData;
 
-      const response = await fetch(APIBase + '/saasapi/jssdk/user/v1/login', {
-        method: 'POST',
-        body: JSON.stringify({ app_id: this.APPID }),
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `tma ${user_data}`,
-        },
-      }).then((res) => res.json());
+      const response: TG_SDK_NAMESPACE.LoginSuccessPayload['data'] =
+        await fetch(APIBase + '/saasapi/jssdk/user/v1/login', {
+          method: 'POST',
+          body: JSON.stringify({ app_id: this.APPID }),
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `tma ${user_data}`,
+          },
+        }).then((res) => res.json());
+
+      this.setCookies({
+        name: this.params.tokenKey!,
+        value: response.token,
+        expirationTimestamp: response.expired_at,
+      });
 
       cb({
         status: 'success',
@@ -373,33 +383,36 @@ export class TG_SDK {
    */
   async popupCallback(button_id: TG_SDK_NAMESPACE.ParamsPopupButton['id']) {
     let response: CreateOrderResponse;
-
     if (button_id !== 'Close') {
-      console.log(this.payOptions);
+        try {
+        console.log(this.payOptions);
 
-      /**
-       * 创建支付订单
-       */
-      response = await (
-        await fetch(APIBase + '/saasapi/jssdk/pay/v1/order', {
-          method: 'POST',
-          body: JSON.stringify({
-            title: this.payOptions!.title,
-            description: this.payOptions!.message,
-            order_id: this.payOptions!.order_id,
-            amount: this.payOptions!.amount,
-            extra: this.payOptions!.extra || '',
-            token: button_id,
-          }),
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${
-              this.Cookies[this.params.tokenKey || 'token']
-            }`,
-          },
-        })
-      ).json();
-    }
+        /**
+         * 创建支付订单
+         */
+        response = await (
+          await fetch(APIBase + '/saasapi/jssdk/pay/v1/order', {
+            method: 'POST',
+            body: JSON.stringify({
+              title: this.payOptions!.title,
+              description: this.payOptions!.message,
+              order_id: this.payOptions!.order_id,
+              amount: this.payOptions!.amount,
+              extra: this.payOptions!.extra || '',
+              token: button_id,
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${this.Cookies[this.params.tokenKey!]}`,
+            },
+          })
+        ).json();
+
+      } catch (error) {
+        throw onError("popupCallback ['创建支付订单']", error);
+      }
+      }
+
 
     if (button_id === buttons[0].id) {
       this.WebApp.HapticFeedback.impactOccurred('light');
@@ -492,6 +505,7 @@ export class TG_SDK {
         extra: this.payOptions.extra,
       });
       this.WebApp.HapticFeedback.notificationOccurred('error');
+      throw onError('tonTransaction', err);
     }
   }
 
@@ -539,5 +553,31 @@ export class TG_SDK {
   private get Cookies() {
     const cookies = parseCookies(document.cookie);
     return cookies;
+  }
+
+  private setCookies({
+    name,
+    value,
+    expirationTimestamp,
+  }: {
+    name: string;
+    value: string;
+    expirationTimestamp?: number;
+  }) {
+    // 创建新的 cookie 字符串
+    let cookieString: string =
+      encodeURIComponent(name) + '=' + encodeURIComponent(value);
+
+    // 如果指定了过期时间戳，添加过期时间
+    if (expirationTimestamp) {
+      const expirationDate = new Date(expirationTimestamp);
+      cookieString += '; expires=' + expirationDate.toUTCString();
+    }
+
+    // 添加路径（假设为根路径）
+    cookieString += '; path=/';
+
+    // 设置 cookie
+    document.cookie = cookieString;
   }
 }
