@@ -290,18 +290,17 @@ export class TG_SDK {
       const response: TG_SDK_NAMESPACE.LoginSuccessPayload['data'] =
         await fetch(APIBase + '/saasapi/jssdk/user/v1/login', {
           method: 'POST',
-          body: JSON.stringify({ app_id: this.APPID, invite_code: this.StartData }),
+          body: JSON.stringify({
+            app_id: this.APPID,
+            invite_code: this.StartData,
+          }),
           headers: {
             'Content-Type': 'application/json',
             Authorization: `tma ${user_data}`,
           },
         }).then((res) => res.json());
 
-      this.setCookies({
-        name: this.params.tokenKey!,
-        value: response.token,
-        expirationTimestamp: response.expired_at,
-      });
+      localStorage.setItem(this.params.tokenKey!, response.token);
 
       cb({
         status: 'success',
@@ -323,25 +322,25 @@ export class TG_SDK {
    */
   async share({ text, cb }: TG_SDK_NAMESPACE.SharePayload) {
     try {
-      const { link }: {link: string} =
-      await fetch(APIBase + '/saasapi/jssdk/user/v1/share', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.Cookies[this.params.tokenKey!]}`,
-        },
-      }).then((res) => res.json());
+      const { link }: { link: string } = await fetch(
+        APIBase + '/saasapi/jssdk/user/v1/share',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.Token}`,
+          },
+        }
+      ).then((res) => res.json());
 
       this.WebApp.openTelegramLink(
-        encodeURI(
-          `https://t.me/share/url?url=${link}${text ? '&text=' : ''}`
-        )
+        encodeURI(`https://t.me/share/url?url=${link}${text ? '&text=' : ''}`)
       );
       log('分享成功');
       cb?.();
     } catch (error) {
       log('分享失败');
-      throw onError('share', error)
+      throw onError('share', error);
     }
   }
   /**
@@ -397,7 +396,7 @@ export class TG_SDK {
   async popupCallback(button_id: TG_SDK_NAMESPACE.ParamsPopupButton['id']) {
     let response: CreateOrderResponse;
     if (button_id !== 'Close') {
-        try {
+      try {
         console.log(this.payOptions);
 
         /**
@@ -416,16 +415,14 @@ export class TG_SDK {
             }),
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${this.Cookies[this.params.tokenKey!]}`,
+              Authorization: `Bearer ${this.Token}`,
             },
           })
         ).json();
-
       } catch (error) {
         throw onError("popupCallback ['创建支付订单']", error);
       }
-      }
-
+    }
 
     if (button_id === buttons[0].id) {
       this.WebApp.HapticFeedback.impactOccurred('light');
@@ -564,37 +561,10 @@ export class TG_SDK {
   }
 
   private get StartData() {
-    return this.WebApp.initDataUnsafe.start_param || ''
+    return this.WebApp.initDataUnsafe.start_param || '';
   }
 
-  private get Cookies() {
-    const cookies = parseCookies(document.cookie);
-    return cookies;
-  }
-
-  private setCookies({
-    name,
-    value,
-    expirationTimestamp,
-  }: {
-    name: string;
-    value: string;
-    expirationTimestamp?: number;
-  }) {
-    // 创建新的 cookie 字符串
-    let cookieString: string =
-      encodeURIComponent(name) + '=' + encodeURIComponent(value);
-
-    // 如果指定了过期时间戳，添加过期时间
-    if (expirationTimestamp) {
-      const expirationDate = new Date(expirationTimestamp);
-      cookieString += '; expires=' + expirationDate.toUTCString();
-    }
-
-    // 添加路径（假设为根路径）
-    cookieString += '; path=/';
-
-    // 设置 cookie
-    document.cookie = cookieString;
+  private get Token() {
+    return localStorage.getItem(this.params.tokenKey!) || '';
   }
 }
