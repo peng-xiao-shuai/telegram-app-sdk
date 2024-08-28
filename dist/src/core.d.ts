@@ -215,6 +215,5 @@ export declare class TG_SDK {
     private sendTransaction;
     private toNanoTon;
     private get StartData();
-    private get Cookies();
-    private setCookies;
+    private get Token();
 }
