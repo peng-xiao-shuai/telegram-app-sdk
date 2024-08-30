@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "declarationDir": "./types-dist",
+    "types": [
+      "@types/node",
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+    }
+  },
+  "include": [
+    "./src",
+  ],
+  "typedocOptions": {
+    "entryPoints": "./src/index.ts"
+  }
+}

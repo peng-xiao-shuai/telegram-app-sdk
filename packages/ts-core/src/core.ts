@@ -32,8 +32,8 @@ export interface TG_SDKOptions {
    */
   appid: string;
   /**
-   * token 在 cookie 中的 key 名称
-   * @default 'token'
+   * token 在 localStorage 中的 key 名称
+   * @default '_TG_SDK_Token'
    */
   tokenKey?: string;
   /**
@@ -260,7 +260,7 @@ export class TG_SDK {
     this.version = version;
     this.params = {
       ...params,
-      tokenKey: params.tokenKey || 'token',
+      tokenKey: params.tokenKey || '_TG_SDK_Token',
     };
     this.isTG = !!window.Telegram.WebApp.initData;
 

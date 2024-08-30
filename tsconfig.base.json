@@ -11,7 +11,6 @@
     "skipLibCheck": true,
     "strict": true,
     "declaration": true,
-    "declarationDir": "./dist/types",
     // "declarationMap": true,
     // "sourceMap": true,
     "esModuleInterop": true,
@@ -21,28 +20,11 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "types": [
-      "@types/node",
-    ],
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    }
   },
-  "typedocOptions": {
-    "entryPoints": [
-      "./src/index.ts"
-    ],
-    "out": "docs",
-    "includeVersion": true,
-    "disableSources": false
-  },
-  "include": [
-    "src",
-  ],
   "exclude": [
     "env.d.ts",
-    "node_modules"
+    "node_modules",
+    "dist",
+    "docs"
   ]
 }

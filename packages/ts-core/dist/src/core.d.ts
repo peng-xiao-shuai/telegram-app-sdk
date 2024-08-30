@@ -5,8 +5,8 @@ export interface TG_SDKOptions {
      */
     appid: string;
     /**
-     * token 在 cookie 中的 key 名称
-     * @default 'token'
+     * token 在 localStorage 中的 key 名称
+     * @default '_TG_SDK_Token'
      */
     tokenKey?: string;
     /**

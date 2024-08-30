@@ -22,9 +22,7 @@ script.onload = () => {
   WebApp.enableClosingConfirmation();
 
   if (!window.TG_SDK) {
-    window.TG_SDK = new TG_SDK({
-      ...TGConfig,
-    });
+    window.TG_SDK = new TG_SDK(TGConfig);
   }
 };
 script.onerror = () => {

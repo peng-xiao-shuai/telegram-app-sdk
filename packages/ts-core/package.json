@@ -1,0 +1,26 @@
+{
+  "name": "@telegram-sdk/ts-core",
+  "version": "1.0.0-rc-20240828173814",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "rollup -c rollup.config.mjs -w",
+    "build": "rimraf dist && rollup -c"
+  },
+  "keywords": [],
+  "author": "peng-xiao-shuai",
+  "license": "ISC",
+  "dependencies": {
+    "@ton/core": "^0.56.3",
+    "@tonconnect/ui": "^2.0.6",
+    "ton": "^13.9.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5",
+    "rollup-plugin-livereload": "^2.0.5",
+    "rollup-plugin-serve": "^1.1.1",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2"
+  }
+}

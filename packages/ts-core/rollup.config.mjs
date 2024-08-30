@@ -3,14 +3,18 @@ import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
 import polyfillNode from 'rollup-plugin-polyfill-node'
-import { terser } from 'rollup-plugin-terser'
-import replace from '@rollup/plugin-replace';
-import dotenv from 'dotenv';
+import terser from '@rollup/plugin-terser'
+import replace from '@rollup/plugin-replace'
+import dotenv from 'dotenv'
 import serve from 'rollup-plugin-serve'
 import livereload from 'rollup-plugin-livereload'
+import path from 'path'
 
 // 加载 .env 文件
-dotenv.config();
+dotenv.config({
+  path: path.resolve(process.cwd(), '../../.env'),
+  debug: process.env.ROLLUP_WATCH,
+})
 
 const production = !process.env.ROLLUP_WATCH
 
@@ -36,7 +40,7 @@ export default {
     polyfillNode(),
     !production && serve({
       contentBase: ['dist'],
-      open: true,
+      open: false,
       host: 'localhost',
       port: 4000,
     }),
