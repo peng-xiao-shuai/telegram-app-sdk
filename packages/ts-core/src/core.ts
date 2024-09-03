@@ -1,63 +1,30 @@
-import {
-  base64UrlEncode,
-  decodeFromBase64Url,
-  parseCookies,
-} from './utils/string-transform';
+import { decodeFromBase64Url } from './utils/string-transform';
 import { TonConnectUI, CHAIN, TonConnectUiCreateOptions } from '@tonconnect/ui';
 import { beginCell } from '@ton/core';
 import { version } from '../package.json';
-import { closeModal, createButton, showModal } from './utils/model';
 
-const buttons: TG_SDK_NAMESPACE.ParamsPopupButton[] = [
-  {
-    id: 'Ton',
-    type: 'default',
-    text: 'Ton 支付',
-  },
-  {
-    id: 'Stars',
-    type: 'default',
-    text: 'Star 支付',
-  },
-  {
-    id: 'Close',
-    type: 'close',
-    text: '',
-  },
-];
-
-export interface TG_SDKOptions {
+interface TG_SDKOptions {
   /**
-   * id 标识
+   * @description id 标识
    */
   appid: string;
   /**
-   * token 在 localStorage 中的 key 名称
+   * @description token 在 localStorage 中的 key 名称
    * @default '_TG_SDK_Token'
    */
   tokenKey?: string;
   /**
-   * user_id 在外部环境打开时由于获取不到 TG 用户信息，故此需要传入，仅在 debug 为 true 生效
+   * @description user_id 在外部环境打开时由于获取不到 TG 用户信息，故此需要传入，仅在 debug 为 true 生效
    * @default 9527
    */
   user_id?: number;
   /**
-   * 机器人名称
-   * @deprecated
-   */
-  botName?: string;
-  /**
-   * 小程序名称
-   * @deprecated
-   */
-  appName?: string;
-  /**
-   * 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功(Ton 除外，因为 debug 情况下可以使用测试网络支付)
+   * @description 是否开启调试模式，开启后 日志会显示在控制台 以及不会进入支付流程，直接返回成功(Ton 除外，因为 debug 情况下可以使用测试网络支付)
    * @default false
    */
   debug?: boolean;
   /**
-   * ton 配置
+   * @description ton 配置
    * @see https://ton-connect.github.io/sdk/types/_tonconnect_ui.TonConnectUiCreateOptions.html
    */
   tonConfig: TonConnectUiCreateOptions;
@@ -65,30 +32,17 @@ export interface TG_SDKOptions {
 /**
  * TG_SDK 类中所需的类型命名空间
  */
-export namespace TG_SDK_NAMESPACE {
-  export interface ParamsPopupButtonBase {
-    readonly id: 'Ton' | 'Stars' | 'Close';
-    type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
-  }
-  export interface ParamsPopupButtonWithText extends ParamsPopupButtonBase {
-    text: string;
-    type?: 'default' | 'destructive';
-  }
-  export type ParamsPopupButton =
-    | ParamsPopupButtonWithText
-    | (ParamsPopupButtonBase & {
-        type: 'ok' | 'cancel' | 'close';
-        text?: string;
-      });
+namespace TG_SDK_NAMESPACE {
+  export type PayTypes = 'Ton' | 'Stars' | 'Usdt';
 
   /**
-   * 支付状态 paid - 成功 cancelled - 取消 failed - 失败 pending - 等待中（只有 star 支付时会有完整状态，ton 支付只会有 paid |
+   * @description 支付状态 paid - 成功 cancelled - 取消 failed - 失败 pending - 等待中（只有 star 支付时会有完整状态，ton 支付只会有 paid |
 cancelled）
    */
   export type InvoiceStatus = 'paid' | 'cancelled' | 'failed' | 'pending';
 
   /**
-   * 登录成功回调载荷
+   * @description 登录成功回调载荷
    */
   export interface LoginSuccessPayload {
     status: 'success';
@@ -102,7 +56,7 @@ cancelled）
     };
   }
   /**
-   * 登录失败回调载荷
+   * @description 登录失败回调载荷
    */
   export interface LoginFailPayload {
     status: 'fail';
@@ -113,7 +67,7 @@ cancelled）
   }
 
   /**
-   * 登录成功或者失败回调函数
+   * @description 登录成功或者失败回调函数
    */
   export interface LoginPayload {
     cb: (payload: LoginSuccessPayload | LoginFailPayload) => void;
@@ -121,16 +75,11 @@ cancelled）
 
   export interface SharePayload {
     /**
-     * 最后会转 json 在转 base64
-     * @deprecated
-     */
-    params: object;
-    /**
-     * 分享出去后的文字内容 默认为空
+     * @description 分享出去后的文字内容 默认为空
      */
     text?: string;
     /**
-     * 回调函数
+     * @description 回调函数
      */
     cb?: () => void;
   }
@@ -140,32 +89,32 @@ cancelled）
    */
   export interface OpenPayPopupPayload {
     /**
-     * 要在弹出标题中显示的文本，0-64 个字符。
+     * @description 要在弹出标题中显示的文本，0-64 个字符。
      */
     title: string;
     /**
-     * 要在弹出窗口正文中显示的消息，1-256 个字符。
+     * @description 要在弹出窗口正文中显示的消息，1-256 个字符。
      */
     message: string;
     /**
-     * 订单id
+     * @description 订单id
      */
     order_id: string;
     /**
-     * 需要支付的 Ton 币数量 或者 Stars 数量 （Stars 时为正整数）
+     * @description 需要支付的 Ton 币数量 或者 Stars 数量 （Stars 时为正整数）
      */
     amount: string;
     /**
-     * 扩展信息
+     * @description 扩展信息
      * @default '''
      */
     extra?: string;
     /**
-     * 开始支付回调
+     * @description 开始支付回调
      */
-    start?: (button: TG_SDK_NAMESPACE.ParamsPopupButton) => void;
+    start?: (payItem: PayListResponse['support_token'][number]) => void;
     /**
-     * 支付结果回调
+     * @description 支付结果回调
      */
     result?: ({
       status,
@@ -179,50 +128,63 @@ cancelled）
 
 interface CreateOrderResponse {
   /**
-   * Ton 支付时为交易备注信息，Stars 时无用
+   * @description Ton 支付时为交易备注信息，Stars 时无用
    */
   invoice_code: string;
   /**
-   * Ton 支付时为收款地址，Stars 时为发票链接
+   * @description Ton 支付时为收款地址，Stars 时为发票链接
    */
   recharge_address: string;
 }
 
-let { log } = window.console;
-const onError = (funName: string, error: unknown) => {
-  log(funName + '错误', error);
+/**
+ * @description 支付档位接口返回数据
+ */
+interface PayListResponse {
+  /**
+   * @description 挡位id
+   */
+  id: string;
+  /**
+   * @description 标题
+   */
+  title: string;
+  /**
+   * @description 描述
+   */
+  description: string;
+  /**
+   * @description 金额美元
+   */
+  dollar_amount: string;
+  /**
+   * @description 支持支付方式
+   */
+  support_token: { token: TG_SDK_NAMESPACE.PayTypes; amount: string }[];
+}
 
-  if (error instanceof Error) {
-    return new Error(error.message);
-  } else {
-    return new Error(String(error));
-  }
-};
+let { log } = window.console;
 const APIBase = process.env.API_BASE;
 
-export class TG_SDK {
-  AppConfigEnv: {
-    TG_BOT_NAME: string;
-    TG_APP_NAME: string;
-  };
+class TG_SDK {
   /**
-   * 是否开启调试模式，开启后 日志会显示在控制台
+   * @description 是否开启调试模式，开启后 日志会显示在控制台
    */
   readonly debug: boolean;
   /**
-   * TG WebApp 对象，等同于 window.Telegram.WebApp
+   * @description TG WebApp 对象，等同于 window.Telegram.WebApp
    */
   readonly WebApp: any;
   readonly APPID: string;
   /**
-   * Ton UI 实例
+   * @description Ton UI 实例
    */
   readonly tonConnectUI: TonConnectUI;
 
   readonly version: string;
 
   /**
-   * 构造函数中除开 'appName' | 'appid' | 'botName' | 'debug' | 'tonConfig' 以外的值
+   * @description 构造函数中除开 'appName' | 'appid' | 'botName' | 'debug' | 'tonConfig' 以外的值
    */
   readonly params: Omit<
     TG_SDKOptions,
@@ -231,30 +193,19 @@ export class TG_SDK {
   private payOptions: TG_SDK_NAMESPACE.OpenPayPopupPayload | undefined;
 
   /**
-   * 是否 TG 宿主环境中
+   * @description 是否 TG 宿主环境中
    */
   readonly isTG: boolean;
 
   /**
    * @param {TG_SDKOptions} payload
    */
-  constructor({
-    appid,
-    botName,
-    appName,
-    debug,
-    tonConfig,
-    ...params
-  }: TG_SDKOptions) {
+  constructor({ appid, debug, tonConfig, ...params }: TG_SDKOptions) {
     if (debug !== true) {
       log = (msg: string) => {};
     }
     this.debug = debug || false;
     this.WebApp = window.Telegram.WebApp;
-    this.AppConfigEnv = {
-      TG_BOT_NAME: botName || 'pxs-test-bot',
-      TG_APP_NAME: appName || 'test',
-    };
     this.APPID = appid;
     this.tonConnectUI = new TonConnectUI(tonConfig);
     this.version = version;
@@ -265,57 +216,36 @@ export class TG_SDK {
     this.isTG = !!window.Telegram.WebApp.initData;
 
     this.payOptions = undefined;
-
-    if (!this.isTG) {
-      createButton.call(this, buttons);
-    } else {
-      document.body.removeChild(
-        document.getElementsByClassName('tg-pay-popup-model')[0]
-      );
-    }
   }
 
   /**
-   * 登录
-   * @param {TG_SDK_NAMESPACE.LoginPayload} cb 登录回调函数
-   * @example
-   * window.TG_SDK.login({ cb: () => {} })
+   * @description 连接钱包
    */
-  async login({ cb }: TG_SDK_NAMESPACE.LoginPayload) {
-    try {
-      const user_data = this.debug
-        ? this.WebApp.initData || 'testuser#' + (this.params.user_id || 9527)
-        : this.WebApp.initData;
+  connect() {
+    return new Promise((resolve, reject) => {
+      const unsubscribe = this.tonConnectUI.onStatusChange(async (w) => {
+        log('wallet ==>', w);
+        if (!this.debug && w?.account.chain === CHAIN.TESTNET) {
+          reject('You cannot log in using the test network!');
+        }
 
-      const response: TG_SDK_NAMESPACE.LoginSuccessPayload['data'] =
-        await fetch(APIBase + '/saasapi/jssdk/user/v1/login', {
-          method: 'POST',
-          body: JSON.stringify({
-            app_id: this.APPID,
-            invite_code: this.StartData,
-          }),
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `tma ${user_data}`,
-          },
-        }).then((res) => res.json());
-
-      localStorage.setItem(this.params.tokenKey!, response.token);
-
-      cb({
-        status: 'success',
-        data: response,
+        unsubscribe();
+        resolve('');
       });
-    } catch (error) {
-      cb({
-        status: 'fail',
-        data: error,
-      });
-      throw onError('login', error);
-    }
+
+      this.tonConnectUI.openModal();
+    });
   }
+
   /**
-   * 分享
+   * @description 断开连接
+   */
+  disconnect() {
+    this.tonConnectUI.disconnect();
+  }
+
+  /**
+   * @description 分享
    * @param {Parameters<TG_SDK_NAMESPACE.SharePayload>[0]} payload
    * @example
    * window.TG_SDK.share()
@@ -340,11 +270,11 @@ export class TG_SDK {
       cb?.();
     } catch (error) {
       log('分享失败');
-      throw onError('share', error);
+      throw this.onError('share', error);
     }
   }
   /**
-   * 获取通过分享链接进来的参数数据
+   * @description 获取通过分享链接进来的参数数据
    * @deprecated 将在 1.0.0 正式版本删除
    * @example
    * window.TG_SDK.getStartAppParams()
@@ -358,100 +288,35 @@ export class TG_SDK {
     return params;
   }
   /**
-   * 打开 TG 支付弹窗
+   * @description 打开 TG 支付弹窗
    * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload} options
+   * @param {Function} cb 回调函数，将携带一个 button_id 参数
    * @example
    * window.TG_SDK.openPayPopup({message: ''})
    */
-  openPayPopup(options: TG_SDK_NAMESPACE.OpenPayPopupPayload): void {
-    this.payOptions = options;
+  // openPayPopup(
+  //   options: TG_SDK_NAMESPACE.OpenPayPopupPayload,
+  //   buttons: TG_SDK_NAMESPACE.ParamsPopupButton[],
+  //   cb: Function
+  // ): void {
+  //   this.payOptions = options;
 
-    /**
-     * 校验是否支持 start
-     */
-    if (Number(this.WebApp.version) <= 7.4 && !this.debug) {
-      log('Please upgrade your Telegram');
-      buttons.splice(1, 1);
-    }
-
-    if (this.isTG) {
-      this.WebApp.showPopup(
-        {
-          title: this.payOptions.title,
-          message: this.payOptions.message,
-          buttons,
-        },
-        this.popupCallback.bind(this)
-      );
-    } else {
-      showModal({
-        title: this.payOptions.title || '',
-      });
-    }
-  }
+  //   this.WebApp.showPopup(
+  //     {
+  //       title: options.title,
+  //       message: options.message,
+  //       buttons,
+  //     },
+  //     cb
+  //   );
+  // }
 
   /**
-   * popup 回调函数，如果是 h5 则为点击事件函数
+   * @description stars 支付
+   * @param {CreateOrderResponse} response
    */
-  async popupCallback(button_id: TG_SDK_NAMESPACE.ParamsPopupButton['id']) {
-    let response: CreateOrderResponse;
-    if (button_id !== 'Close') {
-      try {
-        console.log(this.payOptions);
-
-        /**
-         * 创建支付订单
-         */
-        response = await (
-          await fetch(APIBase + '/saasapi/jssdk/pay/v1/order', {
-            method: 'POST',
-            body: JSON.stringify({
-              title: this.payOptions!.title,
-              description: this.payOptions!.message,
-              order_id: this.payOptions!.order_id,
-              amount: this.payOptions!.amount,
-              extra: this.payOptions!.extra || '',
-              token: button_id,
-            }),
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${this.Token}`,
-            },
-          })
-        ).json();
-      } catch (error) {
-        throw onError("popupCallback ['创建支付订单']", error);
-      }
-    }
-
-    if (button_id === buttons[0].id) {
-      this.WebApp.HapticFeedback.impactOccurred('light');
-
-      /**
-       * 是否链接，已连接直接支付
-       */
-      if (this.tonConnectUI.connected) {
-        this.tonTransaction(buttons[0], response!);
-      } else {
-        const unsubscribe = this.tonConnectUI.onStatusChange(async (w) => {
-          log('w ==>', w);
-          if (!this.debug && w?.account.chain === CHAIN.TESTNET) {
-            console.error('You cannot log in using the test network!');
-            return;
-          }
-
-          unsubscribe();
-          this.tonTransaction(buttons[0], response);
-        });
-
-        const status = await this.tonConnectUI.openModal();
-        log(status);
-      }
-    } else if (button_id === buttons[1].id) {
-      this.WebApp.HapticFeedback.impactOccurred('light');
-      log('开始支付 ' + buttons[1]);
-      this.payOptions?.start?.(buttons[1]);
-
+  starsTransaction(response: CreateOrderResponse) {
+    return new Promise((resolve) => {
       try {
         this.WebApp.openInvoice(
           response!.recharge_address,
@@ -468,91 +333,78 @@ export class TG_SDK {
               status,
               extra: this.payOptions.extra,
             });
+
+            resolve({
+              status,
+              extra: this.payOptions?.extra,
+            });
           }
         );
       } catch (error) {
-        throw onError('openInvoice', error);
+        log('支付状态 failed');
+        this.payOptions?.result?.({
+          status: 'failed',
+          extra: this.payOptions.extra,
+        });
+        resolve({
+          status: 'failed',
+          extra: this.payOptions?.extra,
+        });
+        this.WebApp.HapticFeedback.notificationOccurred('error');
+        throw this.onError('openInvoice', error);
       }
-    } else {
-      if (!this.isTG) {
-        closeModal();
-      }
-    }
+    });
   }
 
   /**
-   * ton 支付
-   * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload['options']} options
-   * @param {TG_SDK_NAMESPACE.ParamsPopupButton} button
+   * @description ton 支付
+   * @param {CreateOrderResponse} response
    */
-  private async tonTransaction(
-    button: TG_SDK_NAMESPACE.ParamsPopupButton,
-    response: CreateOrderResponse
-  ) {
-    /**
-     * 开始支付
-     */
-    log('开始支付', button);
-    this.payOptions?.start?.(button);
+  tonTransaction(response: CreateOrderResponse) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const { boc } = await this.tonConnectUI.sendTransaction({
+          validUntil: Math.floor(Date.now() / 1000) + 600,
+          network: !this.debug ? CHAIN.MAINNET : CHAIN.TESTNET,
+          messages: [
+            {
+              address: response?.recharge_address,
+              amount: this.toNanoTon(this.payOptions!.amount),
+              payload: beginCell()
+                .storeUint(0, 32)
+                // 设置消息
+                .storeStringTail(response?.invoice_code)
+                .endCell()
+                .toBoc()
+                .toString('base64'),
+            },
+          ],
+        });
 
-    try {
-      const boc = await this.sendTransaction({
-        amount: this.payOptions!.amount,
-        payload: response.invoice_code,
-        recharge: response.recharge_address,
-      });
-
-      log('支付状态 paid');
-      this.payOptions?.result?.({
-        status: 'paid',
-        extra: this.payOptions.extra,
-      });
-      this.WebApp.HapticFeedback.notificationOccurred('success');
-    } catch (err) {
-      log('支付状态 failed');
-      this.payOptions?.result?.({
-        status: 'failed',
-        extra: this.payOptions.extra,
-      });
-      this.WebApp.HapticFeedback.notificationOccurred('error');
-      throw onError('tonTransaction', err);
-    }
-  }
-
-  /**
-   * 发起 Ton 交易
-   */
-  private async sendTransaction({
-    amount,
-    payload,
-    recharge,
-  }: {
-    amount: string;
-    payload: string;
-    recharge: string;
-  }) {
-    try {
-      const { boc } = await this.tonConnectUI.sendTransaction({
-        validUntil: Math.floor(Date.now() / 1000) + 600,
-        messages: [
-          {
-            address: recharge,
-            amount: this.toNanoTon(amount),
-            payload: beginCell()
-              .storeUint(0, 32)
-              // 设置消息
-              .storeStringTail(payload)
-              .endCell()
-              .toBoc()
-              .toString('base64'),
-          },
-        ],
-      });
-
-      return boc;
-    } catch (error) {
-      throw onError('sendTransaction', error);
-    }
+        log('支付状态 paid');
+        this.payOptions?.result?.({
+          status: 'paid',
+          extra: this.payOptions.extra,
+        });
+        this.WebApp.HapticFeedback.notificationOccurred('success');
+        resolve({
+          status: 'paid',
+          extra: this.payOptions?.extra,
+        });
+      } catch (error) {
+        log('支付状态 failed');
+        this.payOptions?.result?.({
+          status: 'failed',
+          extra: this.payOptions.extra,
+        });
+        resolve({
+          status: 'failed',
+          extra: this.payOptions?.extra,
+        });
+        this.WebApp.HapticFeedback.notificationOccurred('error');
+        throw this.onError('tonTransaction', error);
+      }
+    });
   }
 
   private toNanoTon(amountInToncoin: string | number) {
@@ -560,11 +412,49 @@ export class TG_SDK {
     return (Number(amountInToncoin) * NANOTON_PER_TONCOIN).toString();
   }
 
-  private get StartData() {
+  get StartData(): string {
     return this.WebApp.initDataUnsafe.start_param || '';
   }
 
-  private get Token() {
+  /**
+   * @description GET 获取唤起弹窗的 options 参数
+   */
+  get PopupPayOptions(): TG_SDK_NAMESPACE.OpenPayPopupPayload | undefined {
+    return this.payOptions;
+  }
+
+  /**
+   * @description SET 非 TG 情况下需要调用，不然支付成功后没有回调
+   */
+  set PopupPayOptions(value) {
+    this.payOptions = value;
+  }
+
+  /**
+   * @description 获取 Token
+   */
+  get Token(): string {
     return localStorage.getItem(this.params.tokenKey!) || '';
   }
+
+  onError(funName: string, error: unknown) {
+    log(funName + '错误', error);
+
+    if (error instanceof Error) {
+      return new Error(error.message);
+    } else {
+      return new Error(String(error));
+    }
+  }
 }
+
+type TG_SDK_CORE = InstanceType<typeof TG_SDK>;
+
+export default TG_SDK;
+export type {
+  TG_SDK_CORE,
+  TG_SDKOptions,
+  TG_SDK_NAMESPACE,
+  CreateOrderResponse,
+  PayListResponse,
+};

@@ -1,10 +1,16 @@
-import { TG_SDKOptions, TG_SDK } from './core';
-export type { TG_SDKOptions, TG_SDK_NAMESPACE, TG_SDK } from './core';
+import { TG_SDKOptions, default as TG_SDK } from './core';
+export type * from './core';
 
 let TGConfig: TG_SDKOptions;
-window._setTelegramSDKConfig = (config: TG_SDKOptions) => {
+const _setTelegramSDKConfig = (config: TG_SDKOptions) => {
   TGConfig = config;
+  if (!window.TG_SDK_CORE && TGConfig) {
+    window.TG_SDK_CORE = new TG_SDK(TGConfig);
+    console.log('实例化 SDK');
+  }
 };
+
+window._setTelegramSDKConfig = _setTelegramSDKConfig;
 // 创建 script
 const script = document.createElement('script');
 script.src = 'https://telegram.org/js/telegram-web-app.js';
@@ -21,8 +27,9 @@ script.onload = () => {
    */
   WebApp.enableClosingConfirmation();
 
-  if (!window.TG_SDK) {
-    window.TG_SDK = new TG_SDK(TGConfig);
+  if (!window.TG_SDK_CORE && TGConfig) {
+    console.log('实例化 SDK');
+    window.TG_SDK_CORE = new TG_SDK(TGConfig);
   }
 };
 script.onerror = () => {
