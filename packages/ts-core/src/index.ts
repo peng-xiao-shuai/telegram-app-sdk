@@ -1,35 +1,36 @@
-import { TG_SDKOptions, default as TG_SDK } from './core';
+import { TG_SDK_NAMESPACE, TG_SDK_CORE } from './core';
 export type * from './core';
+export * from './core';
 
-let TGConfig: TG_SDKOptions;
-const _setTelegramSDKConfig = (config: TG_SDKOptions) => {
-  TGConfig = config;
-};
+/**
+ * @ignore
+ * @remarks 初始化 TelegramSDK
+ */
+export const initializeTelegramSDK = (
+  config: TG_SDK_NAMESPACE.Options
+): Promise<InstanceType<typeof TG_SDK_CORE>> => {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-web-app.js';
+    script.async = true;
+    document.head.appendChild(script);
 
-window._setTelegramSDKConfig = _setTelegramSDKConfig;
-// 创建 script
-const script = document.createElement('script');
-script.src = 'https://telegram.org/js/telegram-web-app.js';
-script.async = true;
-document.head.appendChild(script);
-script.onload = () => {
-  const WebApp = window.Telegram.WebApp;
-  /**
-   * 开启全屏
-   */
-  WebApp.expand();
-  /**
-   * 开启关闭确认弹窗
-   */
-  WebApp.enableClosingConfirmation();
+    script.onload = () => {
+      const WebApp = (window as any).Telegram.WebApp;
+      WebApp.expand();
+      WebApp.enableClosingConfirmation();
 
-  if (!window.TG_SDK_CORE && TGConfig) {
-    if (TGConfig.debug) {
-      console.log('实例化 SDK');
-    }
-    window.TG_SDK_CORE = new TG_SDK(TGConfig);
-  }
-};
-script.onerror = () => {
-  throw new Error('Failed to load the script');
+      if (config) {
+        if (config.debug) console.log('实例化 SDK');
+        const sdkInstance = new TG_SDK_CORE(config);
+        resolve(sdkInstance);
+      } else {
+        reject(new Error('TGConfig is not set'));
+      }
+    };
+
+    script.onerror = () => {
+      reject(new Error('Failed to load the Telegram Web App script'));
+    };
+  });
 };
