@@ -2,6 +2,7 @@
   "entryPointStrategy": "packages",
   "entryPoints": [
     "packages/ts-core",
+    "packages/react-ui",
   ],
   "out": "docs",
   "includeVersion": true,
