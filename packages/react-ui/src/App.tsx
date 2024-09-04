@@ -1,9 +1,41 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { login, openPayList, openPopupPay, share } from './lib/telegram-utils';
 import { Button } from './components/ui/button';
+import { initializeTelegramSDK, TG_SDK_UI } from './index';
+let isInitializedCopy = false;
 
 function App() {
+  const [isInitialized, setIsInitialized] = useState(false);
+  useEffect(() => {
+    const initSDK = async () => {
+      try {
+        if (isInitializedCopy) return;
+        isInitializedCopy = true;
+        window.TG_SDK_UI = await initializeTelegramSDK(TG_SDK_UI, {
+          debug: true,
+          appid: '5EDhUSpJU9aV9NVZRx9UXg',
+          tonConfig: {
+            manifestUrl: `https://docbphqre6f8b.cloudfront.net/tonconnect-manifest.json`,
+          },
+        });
+
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Failed to initialize SDK', error);
+      }
+    };
+
+    initSDK();
+  }, []);
+
+  if (!isInitialized) {
+    return (
+      <div className="tg_sdk_ui_w-full tg_sdk_ui_h-[100vh] tg_sdk_ui_text-3xl tg_sdk_ui_font-bold tg_sdk_ui_justify-center tg_sdk_ui_flex tg_sdk_ui_items-center">
+        Loading...
+      </div>
+    );
+  }
+
   return <Page></Page>;
 }
 
@@ -15,7 +47,7 @@ const Page = () => {
     setIsLogin(!!window.TG_SDK_CORE?.Token);
   }, []);
   const click = () => {
-    openPopupPay(
+    window.TG_SDK_UI.openPopupPay(
       {
         title: '首冲礼包',
         message: '首冲礼包 ￥6 获得 xxx 钻石',
@@ -50,7 +82,7 @@ const Page = () => {
   const loginClick = () => {
     setInitData('');
 
-    login({
+    window.TG_SDK_UI.login({
       cb: ({ status, data }) => {
         if (status === 'success') {
           setIsLogin(true);
@@ -65,7 +97,7 @@ const Page = () => {
     <div className="tg_sdk_ui_max-w-[80vw] tg_sdk_ui_mx-auto tg_sdk_ui_pt-10">
       <div className="tg_sdk_ui_flex tg_sdk_ui_justify-center tg_sdk_ui_gap-4">
         <div>
-          <Button onClick={openPayList} disabled={!isLogin}>
+          <Button onClick={window.TG_SDK_UI.openPayList} disabled={!isLogin}>
             Pay Lists
           </Button>
         </div>
@@ -79,7 +111,7 @@ const Page = () => {
         <div>
           <Button
             onClick={() => {
-              share({
+              window.TG_SDK_UI.share({
                 text: '输入框内容',
                 cb: () => {
                   console.log('成功');
