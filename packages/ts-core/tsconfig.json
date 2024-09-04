@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "declarationDir": "./types-dist",
+    "declaration": false, // 使用 dts 插件生成声明文件
     "types": [
       "@types/node",
     ],

@@ -1,4 +1,4 @@
-## Telegram SDK
+## @telegram-sdk/core
 
 `Telegram SDK` 是集成 `TelegramWebJs` 的基础合集
 

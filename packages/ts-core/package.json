@@ -2,8 +2,18 @@
   "name": "@telegram-sdk/ts-core",
   "version": "1.0.0-rc-20240828173814",
   "private": true,
-  "main": "dist/telegram-sdk.js",
-  "types": "dist/src/index.d.ts",
+  "main": "dist/index.cjs.js",
+  "browser": "dist/telegram-sdk.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js",
+      "browser": "./dist/telegram-sdk.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "dev": "rollup -c rollup.config.mjs -w",
     "build": "rimraf dist && rollup -c"
@@ -13,6 +23,7 @@
   "license": "ISC",
   "dependencies": {
     "@ton/core": "^0.56.3",
+    "@tonconnect/sdk": "^3.0.5",
     "@tonconnect/ui": "^2.0.6",
     "ton": "^13.9.0"
   },
