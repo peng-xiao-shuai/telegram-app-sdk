@@ -42,50 +42,7 @@ cancelled）
   export type InvoiceStatus = 'paid' | 'cancelled' | 'failed' | 'pending';
 
   /**
-   * @description 登录成功回调载荷
-   */
-  export interface LoginSuccessPayload {
-    status: 'success';
-    data: {
-      /**
-       * 过期时间（时间戳）
-       */
-      expired_at: number;
-      token: string;
-      user_id: string;
-    };
-  }
-  /**
-   * @description 登录失败回调载荷
-   */
-  export interface LoginFailPayload {
-    status: 'fail';
-    /**
-     * catch 捕获到的错误信息
-     */
-    data: any;
-  }
-
-  /**
-   * @description 登录成功或者失败回调函数
-   */
-  export interface LoginPayload {
-    cb: (payload: LoginSuccessPayload | LoginFailPayload) => void;
-  }
-
-  export interface SharePayload {
-    /**
-     * @description 分享出去后的文字内容 默认为空
-     */
-    text?: string;
-    /**
-     * @description 回调函数
-     */
-    cb?: () => void;
-  }
-
-  /**
-   * 打开支付弹窗
+   * @description 打开支付弹窗
    */
   export interface OpenPayPopupPayload {
     /**
@@ -243,73 +200,6 @@ class TG_SDK {
   disconnect() {
     this.tonConnectUI.disconnect();
   }
-
-  /**
-   * @description 分享
-   * @param {Parameters<TG_SDK_NAMESPACE.SharePayload>[0]} payload
-   * @example
-   * window.TG_SDK.share()
-   */
-  async share({ text, cb }: TG_SDK_NAMESPACE.SharePayload) {
-    try {
-      const { link }: { link: string } = await fetch(
-        APIBase + '/saasapi/jssdk/user/v1/share',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.Token}`,
-          },
-        }
-      ).then((res) => res.json());
-
-      this.WebApp.openTelegramLink(
-        encodeURI(`https://t.me/share/url?url=${link}${text ? '&text=' : ''}`)
-      );
-      log('分享成功');
-      cb?.();
-    } catch (error) {
-      log('分享失败');
-      throw this.onError('share', error);
-    }
-  }
-  /**
-   * @description 获取通过分享链接进来的参数数据
-   * @deprecated 将在 1.0.0 正式版本删除
-   * @example
-   * window.TG_SDK.getStartAppParams()
-   */
-  getStartAppParams(): Record<string, any> {
-    const params = JSON.parse(
-      this.WebApp.initDataUnsafe.start_param
-        ? decodeFromBase64Url(this.WebApp.initDataUnsafe.start_param)
-        : '{}'
-    );
-    return params;
-  }
-  /**
-   * @description 打开 TG 支付弹窗
-   * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload} options
-   * @param {Function} cb 回调函数，将携带一个 button_id 参数
-   * @example
-   * window.TG_SDK.openPayPopup({message: ''})
-   */
-  // openPayPopup(
-  //   options: TG_SDK_NAMESPACE.OpenPayPopupPayload,
-  //   buttons: TG_SDK_NAMESPACE.ParamsPopupButton[],
-  //   cb: Function
-  // ): void {
-  //   this.payOptions = options;
-
-  //   this.WebApp.showPopup(
-  //     {
-  //       title: options.title,
-  //       message: options.message,
-  //       buttons,
-  //     },
-  //     cb
-  //   );
-  // }
 
   /**
    * @description stars 支付
