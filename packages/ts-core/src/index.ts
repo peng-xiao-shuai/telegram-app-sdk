@@ -1,4 +1,4 @@
-import { TG_SDK_NAMESPACE, TG_SDK_CORE } from './core';
+import { TG_SDK_NAMESPACE } from './core';
 export type * from './core';
 export * from './core';
 
@@ -6,9 +6,12 @@ export * from './core';
  * @ignore
  * @remarks 初始化 TelegramSDK
  */
-export const initializeTelegramSDK = (
+export const initializeTelegramSDK = <
+  T extends new (config: TG_SDK_NAMESPACE.Options) => InstanceType<T>
+>(
+  SDKClass: T,
   config: TG_SDK_NAMESPACE.Options
-): Promise<InstanceType<typeof TG_SDK_CORE>> => {
+): Promise<InstanceType<T>> => {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-web-app.js';
@@ -22,7 +25,7 @@ export const initializeTelegramSDK = (
 
       if (config) {
         if (config.debug) console.log('实例化 SDK');
-        const sdkInstance = new TG_SDK_CORE(config);
+        const sdkInstance = new SDKClass(config);
         resolve(sdkInstance);
       } else {
         reject(new Error('TGConfig is not set'));
