@@ -1,4 +1,10 @@
-import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ComponentProps, type FC, memo, useCallback, useState } from 'react';
 import { Button } from './ui/button';
 import { PayListResponse } from '@telegram-sdk/ts-core';
@@ -9,11 +15,13 @@ const PayListItem: FC<{
   onItemClick: (item: PayListResponse) => void;
 }> = memo(({ item, onItemClick }) => (
   <Button
-    className="tg_sdk_ui_w-full tg_sdk_ui_mb-4 last-of-type:tg_sdk_ui_mb-0"
+    className="tg_sdk_ui_w-full tg_sdk_ui_h-auto tg_sdk_ui_mb-4 last-of-type:tg_sdk_ui_mb-0"
     onClick={() => onItemClick(item)}
   >
-    <b>{item.title}</b>
-    <span>{item.description}</span>
+    <div className="">
+      <b>{item.title}</b>
+      <div>{item.description}</div>
+    </div>
   </Button>
 ));
 
@@ -52,6 +60,9 @@ export const PayListPopup: FC<{
         <div
           className={payContentData ? 'tg_sdk_ui_hidden' : 'tg_sdk_ui_block'}
         >
+          <DialogHeader>
+            <DialogTitle></DialogTitle>
+          </DialogHeader>
           {list.map((item) => (
             <PayListItem
               key={item.id}
