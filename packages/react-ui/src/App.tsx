@@ -1,26 +1,19 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { login, openPopupPay } from './lib/telegram-utils';
+import { login, openPayList, openPopupPay, share } from './lib/telegram-utils';
+import { Button } from './components/ui/button';
 
 function App() {
-  useEffect(() => {
-    window._setTelegramSDKConfig({
-      debug: true,
-      appid: '5EDhUSpJU9aV9NVZRx9UXg',
-      tonConfig: {
-        manifestUrl: `https://docbphqre6f8b.cloudfront.net/tonconnect-manifest.json`,
-      },
-    });
-  }, []);
-  return (
-    <>
-      <Page></Page>
-    </>
-  );
+  return <Page></Page>;
 }
 
 const Page = () => {
   const [initData, setInitData] = useState('');
+  const [isLogin, setIsLogin] = useState(false);
+
+  useEffect(() => {
+    setIsLogin(!!window.TG_SDK_CORE?.Token);
+  }, []);
   const click = () => {
     openPopupPay(
       {
@@ -60,7 +53,10 @@ const Page = () => {
     login({
       cb: ({ status, data }) => {
         if (status === 'success') {
+          setIsLogin(true);
           setInitData(JSON.stringify(data));
+        } else {
+          setIsLogin(false);
         }
       },
     });
@@ -69,21 +65,35 @@ const Page = () => {
     <div className="tg_sdk_ui_max-w-[80vw] tg_sdk_ui_mx-auto tg_sdk_ui_pt-10">
       <div className="tg_sdk_ui_flex tg_sdk_ui_justify-center tg_sdk_ui_gap-4">
         <div>
-          <button
-            className="tg_sdk_ui_px-6 tg_sdk_ui_btn tg_sdk_ui_py-2 tg_sdk_ui_border tg_sdk_ui_rounded-[0.5rem] tg_sdk_ui_border-white tg_sdk_ui_w-full tg_sdk_ui_text-white tg_sdk_ui_text-2xl"
-            onClick={click}
-          >
-            Pay
-          </button>
+          <Button onClick={openPayList} disabled={!isLogin}>
+            Pay Lists
+          </Button>
         </div>
 
         <div>
-          <button
-            className="tg_sdk_ui_px-6 tg_sdk_ui_btn tg_sdk_ui_py-2 tg_sdk_ui_border tg_sdk_ui_rounded-[0.5rem] tg_sdk_ui_border-white tg_sdk_ui_w-full tg_sdk_ui_text-white tg_sdk_ui_text-2xl"
-            onClick={loginClick}
+          <Button onClick={click} disabled={!isLogin}>
+            Pay
+          </Button>
+        </div>
+
+        <div>
+          <Button
+            onClick={() => {
+              share({
+                text: '输入框内容',
+                cb: () => {
+                  console.log('成功');
+                },
+              });
+            }}
+            disabled={!isLogin}
           >
-            Login
-          </button>
+            Share
+          </Button>
+        </div>
+
+        <div>
+          <Button onClick={loginClick}>Login</Button>
         </div>
       </div>
 

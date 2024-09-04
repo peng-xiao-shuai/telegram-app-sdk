@@ -10,5 +10,14 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      window._setTelegramSDKConfig({
+        debug: true,
+        appid: '5EDhUSpJU9aV9NVZRx9UXg',
+        tonConfig: {
+          manifestUrl: `https://docbphqre6f8b.cloudfront.net/tonconnect-manifest.json`,
+        },
+      });
+    </script>
   </body>
 </html>
