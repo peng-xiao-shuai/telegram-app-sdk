@@ -13,7 +13,7 @@ export const fetchRequest: <T>(
     const response = await (
       await fetch(import.meta.env.VITE_APP_API_BASE + url, {
         method: 'POST',
-        body: JSON.stringify(data || {}),
+        body: init.method === 'GET' ? undefined : JSON.stringify(data || {}),
         ...init,
         headers: {
           'Content-Type': 'application/json',
