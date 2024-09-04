@@ -7,6 +7,9 @@ import { version } from '../package.json';
  * @remarks TG_SDK 类中所需的类型命名空间
  */
 namespace TG_SDK_NAMESPACE {
+  /**
+   * @remarks 原来 TG_SDKOptions 类型
+   */
   export interface Options {
     /**
      * @remarks id 标识
@@ -33,6 +36,9 @@ namespace TG_SDK_NAMESPACE {
      */
     tonConfig: TonConnectUiCreateOptions;
   }
+  /**
+   * @remarks 可用的支付方式
+   */
   export type PayTypes = 'Ton' | 'Stars' | 'Usdt';
 
   /**
@@ -83,6 +89,9 @@ cancelled）
   }
 }
 
+/**
+ * @remarks 创建订单返回的数据
+ */
 interface CreateOrderResponse {
   /**
    * @remarks Ton 支付时为交易备注信息，Stars 时无用
@@ -121,8 +130,10 @@ interface PayListResponse {
 }
 
 let { log } = window.console;
-const APIBase = process.env.API_BASE;
 
+/**
+ * @remarks 原来 TG_SDK
+ */
 class TG_SDK {
   /**
    * @remarks 是否开启调试模式，开启后 日志会显示在控制台
@@ -167,7 +178,7 @@ class TG_SDK {
       log = (msg: string) => {};
     }
     this.debug = debug || false;
-    this.WebApp = window.Telegram.WebApp;
+    this.WebApp = window.Telegram?.WebApp;
     this.APPID = appid;
     this.tonConnectUI = new TonConnectUI(tonConfig);
     this.version = version;
@@ -175,7 +186,7 @@ class TG_SDK {
       ...params,
       tokenKey: params.tokenKey || '_TG_SDK_Token',
     };
-    this.isTG = !!window.Telegram.WebApp.initData;
+    this.isTG = !!window.Telegram?.WebApp.initData;
 
     this.payOptions = undefined;
   }
@@ -203,14 +214,22 @@ class TG_SDK {
    * @remarks 断开连接
    */
   disconnect() {
-    this.tonConnectUI.disconnect();
+    return this.tonConnectUI.disconnect();
   }
 
   /**
    * @remarks stars 支付
    * @param {CreateOrderResponse} response
+   * @example
+   * window.TG_SDK.tonTransaction({
+   *  recharge_address: "https://t.me/$ZR439oScwErACQAAH40H8p-Q3Qo"
+   * })
    */
-  starsTransaction(response: CreateOrderResponse) {
+  starsTransaction(
+    response: CreateOrderResponse
+  ): Promise<
+    Parameters<NonNullable<TG_SDK_NAMESPACE.OpenPayPopupPayload['result']>>[0]
+  > {
     return new Promise((resolve) => {
       try {
         this.WebApp.openInvoice(
@@ -254,8 +273,17 @@ class TG_SDK {
   /**
    * @remarks ton 支付
    * @param {CreateOrderResponse} response
+   * @example
+   * window.TG_SDK.starsTransaction({
+   *  invoice_code: 'Hello Word!',
+   *  recharge_address: '0QB4bOw8W7eNXp6fhMZNiivCiNxvZDF2sRRz6MtDyiMUUc-n'
+   * })
    */
-  tonTransaction(response: CreateOrderResponse) {
+  tonTransaction(
+    response: CreateOrderResponse
+  ): Promise<
+    Parameters<NonNullable<TG_SDK_NAMESPACE.OpenPayPopupPayload['result']>>[0]
+  > {
     return new Promise(async (resolve, reject) => {
       try {
         const { boc } = await this.tonConnectUI.sendTransaction({
