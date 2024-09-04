@@ -62,6 +62,29 @@ const PopupPayCallback = async (
 /**
  * @description 唤起支付弹窗 (兼容浏览器以及TG)。非 TG 使用 Stars 支付会直接返回成功
  * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload} options
+ * @param {PayListResponse['support_token']} payTypes 支付类型
+ * @example
+ * window.TG_SDK.openPayPopup({
+    message: '首冲礼包 ￥6 获得 xxx 钻石',
+    amount: '1',
+    order_id: String(Math.round(Math.random() * 10000)),
+    start: () => {
+      console.log('开始支付');
+    },
+    result: (status) => {
+      console.log('支付状态 status', status);
+    },
+  },
+  [
+    {
+      token: 'Ton',
+      amount: '0.01',
+    },
+    {
+      token: 'Stars',
+      amount: '1',
+    },
+  ])
  */
 export const openPopupPay = (
   options: TG_SDK_NAMESPACE.OpenPayPopupPayload,
@@ -93,49 +116,9 @@ export const openPopupPay = (
 };
 
 /**
- * @description 登录
- * @param {TG_SDK_NAMESPACE.LoginPayload} cb 登录回调函数
+ * @description 充值档位支付. 唤起充值档位弹窗
  * @example
- * window.TG_SDK.login({ cb: () => {} })
- */
-export const login = async ({ cb }: TG_SDK_NAMESPACE.LoginPayload) => {
-  try {
-    const user_data = window.TG_SDK_CORE.debug
-      ? window.TG_SDK_CORE.WebApp.initData ||
-        'testuser#' + (window.TG_SDK_CORE.params.user_id || 9527)
-      : window.TG_SDK_CORE.WebApp.initData;
-
-    const response: TG_SDK_NAMESPACE.LoginSuccessPayload['data'] =
-      await fetchRequest(
-        '/saasapi/jssdk/user/v1/login',
-        {
-          app_id: window.TG_SDK_CORE.APPID,
-          invite_code: window.TG_SDK_CORE.StartData,
-        },
-        {
-          headers: {
-            Authorization: `tma ${user_data}`,
-          },
-        }
-      );
-
-    localStorage.setItem(window.TG_SDK_CORE.params.tokenKey!, response.token);
-
-    cb({
-      status: 'success',
-      data: response,
-    });
-  } catch (error) {
-    cb({
-      status: 'fail',
-      data: error,
-    });
-    throw window.TG_SDK_CORE.onError('UI login', error);
-  }
-};
-
-/**
- * @description 充值档位支付
+ * window.TG_SDK.openPayList()
  */
 export const openPayList = async () => {
   const response = await fetchRequest<{
@@ -152,4 +135,115 @@ export const openPayList = async () => {
     list: response.list,
     callback: PopupPayCallback,
   });
+};
+
+/**
+ * @description 登录成功回调载荷
+ */
+export interface LoginSuccessPayload {
+  status: 'success';
+  data: {
+    /**
+     * @description 过期时间（时间戳）
+     */
+    expired_at: number;
+    token: string;
+    user_id: string;
+  };
+}
+/**
+ * @description 登录失败回调载荷
+ */
+export interface LoginFailPayload {
+  status: 'fail';
+  /**
+   * @description catch 捕获到的错误信息
+   */
+  data: any;
+}
+
+/**
+ * @description 登录成功或者失败回调函数
+ */
+export interface LoginPayload {
+  cb: (payload: LoginSuccessPayload | LoginFailPayload) => void;
+}
+/**
+ * @description 登录
+ * @param {TG_SDK_NAMESPACE.LoginPayload} cb 登录回调函数
+ * @example
+ * window.TG_SDK.login({ cb: ({ status, data }) => {
+ *  console.log(status, data)
+   }})
+ */
+export const login = async ({ cb }: LoginPayload) => {
+  try {
+    const user_data = window.TG_SDK_CORE.debug
+      ? window.TG_SDK_CORE.WebApp.initData ||
+        'testuser#' + (window.TG_SDK_CORE.params.user_id || 9527)
+      : window.TG_SDK_CORE.WebApp.initData;
+
+    const response: LoginSuccessPayload['data'] = await fetchRequest(
+      '/saasapi/jssdk/user/v1/login',
+      {
+        app_id: window.TG_SDK_CORE.APPID,
+        invite_code: window.TG_SDK_CORE.StartData,
+      },
+      {
+        headers: {
+          Authorization: `tma ${user_data}`,
+        },
+      }
+    );
+
+    localStorage.setItem(window.TG_SDK_CORE.params.tokenKey!, response.token);
+
+    cb({
+      status: 'success',
+      data: response,
+    });
+  } catch (error) {
+    cb({
+      status: 'fail',
+      data: error,
+    });
+    throw window.TG_SDK_CORE.onError('UI login', error);
+  }
+};
+
+export interface SharePayload {
+  /**
+   * @description 分享出去后的文字内容 默认为空
+   */
+  text?: string;
+  /**
+   * @description 回调函数
+   */
+  cb?: (status: 'success' | 'fail') => void;
+}
+/**
+ * @description 分享
+ * @param {Parameters<TG_SDK_NAMESPACE.SharePayload>[0]} payload
+ * @example
+ * window.TG_SDK.share()
+ * window.TG_SDK.share({ text: '描述内容，这段内容会在输入框内', cb: (status) => {
+ *  console.log(status)
+ * }})
+ */
+export const share = async ({ text, cb }: SharePayload) => {
+  try {
+    const { link }: { link: string } = await fetchRequest(
+      '/saasapi/jssdk/user/v1/share'
+    );
+
+    window.TG_SDK_CORE.WebApp.openTelegramLink(
+      encodeURI(
+        `https://t.me/share/url?url=${link}${text ? '&text=' + text : ''}`
+      )
+    );
+    cb?.('success');
+  } catch (error) {
+    cb?.('fail');
+    throw window.TG_SDK_CORE.onError('share', error);
+  }
 };
