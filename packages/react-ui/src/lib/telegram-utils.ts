@@ -3,7 +3,6 @@ import {
   type CreateOrderResponse,
   PayListResponse,
 } from '@telegram-sdk/ts-core';
-import { fetchRequest } from './sdk-api';
 import { PayTypePopup } from '@/components/PayTypesPopup';
 import { PayListPopup } from '@/components/PayListPopup';
 import { reactRenderer } from './react-renderer';
@@ -57,6 +56,31 @@ class TG_SDK_UI extends TG_SDK_CORE {
     this.version = version;
   }
 
+  private async fetchRequest<T>(
+    url: string,
+    data?: object,
+    init: RequestInit = {}
+  ): Promise<T> {
+    try {
+      const response = await (
+        await fetch(import.meta.env.VITE_APP_API_BASE + url, {
+          method: 'POST',
+          body: init.method === 'GET' ? undefined : JSON.stringify(data || {}),
+          ...init,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.Token || ''}`,
+            ...(init.headers || {}),
+          },
+        })
+      ).json();
+
+      return response;
+    } catch (error) {
+      throw window.TG_SDK_CORE.onError('UI API', error);
+    }
+  }
+
   /**
    * @remarks popup 回调函数，如果是 h5 则为点击事件函数。
    * @param {PayListResponse['support_token'][number]} payItem
@@ -66,7 +90,7 @@ class TG_SDK_UI extends TG_SDK_CORE {
   ) => {
     try {
       this.WebApp.HapticFeedback.impactOccurred('light');
-      const response = await fetchRequest<CreateOrderResponse>(
+      const response = await this.fetchRequest<CreateOrderResponse>(
         '/saasapi/jssdk/pay/v1/custom_order',
         {
           title: this.PopupPayOptions!.title,
@@ -178,7 +202,7 @@ class TG_SDK_UI extends TG_SDK_CORE {
    */
   async openPayList() {
     try {
-      const response = await fetchRequest<{
+      const response = await this.fetchRequest<{
         list: PayListResponse[];
       }>(
         '/saasapi/jssdk/pay/v1/paylist',
@@ -216,7 +240,7 @@ class TG_SDK_UI extends TG_SDK_CORE {
               'testuser#' + (this.params.user_id || 9527)
             : this.WebApp.initData;
 
-          const response: LoginSuccessPayload['data'] = await fetchRequest(
+          const response: LoginSuccessPayload['data'] = await this.fetchRequest(
             '/saasapi/jssdk/user/v1/login',
             {
               app_id: this.APPID,
@@ -270,7 +294,7 @@ class TG_SDK_UI extends TG_SDK_CORE {
     return new Promise((resolve) => {
       (async () => {
         try {
-          const { link }: { link: string } = await fetchRequest(
+          const { link }: { link: string } = await this.fetchRequest(
             '/saasapi/jssdk/user/v1/share'
           );
 
