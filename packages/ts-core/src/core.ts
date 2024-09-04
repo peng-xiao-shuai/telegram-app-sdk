@@ -149,7 +149,7 @@ class TG_SDK {
    */
   readonly tonConnectUI: TonConnectUI;
 
-  readonly version: string;
+  version: string;
 
   /**
    * @remarks 构造函数中除开 'appName' | 'appid' | 'botName' | 'debug' | 'tonConfig' 以外的值
