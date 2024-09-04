@@ -6,9 +6,9 @@
  */
 export const fetchRequest: <T>(
   url: string,
-  data: object,
+  data?: object,
   init?: RequestInit
-) => Promise<T> = async (url: string, data: object, init = {}) => {
+) => Promise<T> = async (url: string, data?: object, init = {}) => {
   try {
     const response = await (
       await fetch(import.meta.env.VITE_APP_API_BASE + url, {
