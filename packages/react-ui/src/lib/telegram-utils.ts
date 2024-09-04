@@ -138,7 +138,9 @@ export const login = async ({ cb }: TG_SDK_NAMESPACE.LoginPayload) => {
  * @description 充值档位支付
  */
 export const openPayList = async () => {
-  const getPayList = await fetchRequest<PayListResponse[]>(
+  const response = await fetchRequest<{
+    list: PayListResponse[];
+  }>(
     '/saasapi/jssdk/pay/v1/paylist',
     {},
     {
@@ -147,7 +149,7 @@ export const openPayList = async () => {
   );
 
   reactRenderer.render(PayListPopup, {
-    list: getPayList,
+    list: response.list,
     callback: PopupPayCallback,
   });
 };
