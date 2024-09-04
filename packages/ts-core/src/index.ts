@@ -4,10 +4,6 @@ export type * from './core';
 let TGConfig: TG_SDKOptions;
 const _setTelegramSDKConfig = (config: TG_SDKOptions) => {
   TGConfig = config;
-  if (!window.TG_SDK_CORE && TGConfig) {
-    window.TG_SDK_CORE = new TG_SDK(TGConfig);
-    console.log('实例化 SDK');
-  }
 };
 
 window._setTelegramSDKConfig = _setTelegramSDKConfig;
@@ -28,7 +24,9 @@ script.onload = () => {
   WebApp.enableClosingConfirmation();
 
   if (!window.TG_SDK_CORE && TGConfig) {
-    console.log('实例化 SDK');
+    if (TGConfig.debug) {
+      console.log('实例化 SDK');
+    }
     window.TG_SDK_CORE = new TG_SDK(TGConfig);
   }
 };
