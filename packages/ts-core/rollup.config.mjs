@@ -34,7 +34,7 @@ export default [{
       `,
       footer: `
           global._setTelegramSDKConfig = async (config) => {
-            window.TG_SDK = await TG_SDK.initializeTelegramSDK(config)
+            window.TG_SDK = await TG_SDK.initializeTelegramSDK(TG_SDK.TG_SDK_CORE, config)
             return window.TG_SDK
           };
         })(typeof window !== 'undefined' ? window : this);
