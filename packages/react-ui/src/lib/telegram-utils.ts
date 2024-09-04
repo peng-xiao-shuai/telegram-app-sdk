@@ -77,7 +77,7 @@ class TG_SDK_UI extends TG_SDK_CORE {
 
       return response;
     } catch (error) {
-      throw window.TG_SDK_CORE.onError('UI API', error);
+      throw this.onError('UI API', error);
     }
   }
 
