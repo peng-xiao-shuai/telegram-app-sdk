@@ -1,5 +1,7 @@
 ## @telegram-sdk/core
 
+## 此包为 Core 包只涉及核心逻辑，不涉及业务
+
 `Telegram SDK` 是集成 `TelegramWebJs` 的基础合集
 
 ### [查看更改日志](https://github.com/peng-xiao-shuai/telegram-sdk-docs/blob/gh-pages/CHANGE.md)
@@ -22,10 +24,11 @@
 console.log(window.Telegram)
 /**
  * 在未调用 _setTelegramSDKConfig 前 TG_SDK 为 undefined
+ * 在调用 _setTelegramSDKConfig 后 TG_SDK 不会里面有数据，这个是一个异步过程
  */
 console.log(window.TG_SDK)
 
-window._setTelegramSDKConfig({
+const config = {
   // 开启调试模式
   debug: true, // 选填
     // appid
@@ -37,6 +40,11 @@ window._setTelegramSDKConfig({
   tonConfig: {
     manifestUrl: `https://docbphqre6f8b.cloudfront.net/tonconnect-manifest.json`, // 必填
   },
-})
+}
+
+window._setTelegramSDKConfig(config)
+
+// or
+// const TG_SDK = await window._setTelegramSDKConfig(config)
 </script>
 ```

@@ -33,7 +33,6 @@ export default [{
           }
       `,
       footer: `
-      console.log(TG_SDK)
           global._setTelegramSDKConfig = async (config) => {
             window.TG_SDK = await TG_SDK.initializeTelegramSDK(config)
             return window.TG_SDK
