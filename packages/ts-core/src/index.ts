@@ -4,7 +4,9 @@ export * from './core';
 
 /**
  * @ignore
- * @remarks 初始化 TelegramSDK
+ * @remarks 初始化 TG_SDK 函数，用于加载 Telegram-web.js
+ * @param {T} SDKClass SDK类型名称
+ * @param {TG_SDK_NAMESPACE.Options} config SDK类型参数
  */
 export const initializeTelegramSDK = <
   T extends new (config: TG_SDK_NAMESPACE.Options) => InstanceType<T>
