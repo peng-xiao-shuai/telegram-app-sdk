@@ -1,5 +1,5 @@
 {
-  "name": "@telegram-sdk/ts-core",
+  "name": "@telegram-sdk/core",
   "version": "1.0.0-rc-20240828173814",
   "private": true,
   "main": "dist/index.cjs.js",
