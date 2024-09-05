@@ -1,50 +1,52 @@
-# React + TypeScript + Vite
+## @telegram-sdk/ui
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 以 Core 包为基础，补充业务逻辑
 
-Currently, two official plugins are available:
+`Telegram SDK` 是集成 `TelegramWebJs` 的基础合集
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### [查看更改日志](https://github.com/peng-xiao-shuai/telegram-sdk-docs/blob/gh-pages/CHANGELOG.md)
 
-## Expanding the ESLint configuration
+### 开始
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
+将脚本添加到 HTML 文件：
 
 ```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+<script src="xxxx/telegram-sdk-ui.js"></script>
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+您可以在全局变量中找到 `Telegram TG_SDK_UI`，`TG_SDK_UI` 下暴露 `_setTelegramSDKConfig` 用于初始化
+例如
 
 ```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+<script>
+/**
+ * Telegram 官方对象
+ */
+console.log(window.Telegram)
+/**
+ * 在未调用 _setTelegramSDKConfig 前 TG_SDK_UI 为一个对象，包含 _setTelegramSDKConfig 函数
+ * 在调用 _setTelegramSDKConfig 后 TG_SDK_UI 不会立即有数据，这个是一个异步过程
+ * 调用完成 _setTelegramSDKConfig 后 TG_SDK_UI 将不会是一个对象，而是一个 Class 实例
+ */
+console.log(window.TG_SDK_UI)
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
+const config = {
+  // 开启调试模式
+  debug: true, // 选填
+    // appid
+  appid: '',
+  /**
+   * ton 钱包配置
+   * @see https://ton-connect.github.io/sdk/types/_tonconnect_ui.TonConnectUiCreateOptions.html
+   */
+  tonConfig: {
+    manifestUrl: `https://docbphqre6f8b.cloudfront.net/tonconnect-manifest.json`, // 必填
   },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+}
+
+window.TG_SDK_UI._setTelegramSDKConfig(config)
+
+// or
+// const TG_SDK = await window.TG_SDK_UI._setTelegramSDKConfig(config)
+</script>
 ```
