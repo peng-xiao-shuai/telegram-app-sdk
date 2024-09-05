@@ -4,6 +4,7 @@ import {
   initializeTelegramSDK as init,
   TG_SDK_NAMESPACE,
 } from '@telegram-sdk/ts-core';
+import './index.css';
 
 const initializeTelegramSDK = init;
 
