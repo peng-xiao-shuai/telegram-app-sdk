@@ -61,10 +61,6 @@
   * {
     @apply tg_sdk_ui_border-border;
   }
-  body {
-    @apply tg_sdk_ui_bg-background tg_sdk_ui_text-foreground;
-  }
-
   #tc-widget-root {
     @apply tg_sdk_ui_pointer-events-auto;
   }
