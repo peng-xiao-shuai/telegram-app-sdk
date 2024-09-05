@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="../../packages/react-ui/dist/style.css" />
+    <style>
+      .demo button {
+        min-width: 5rem;
+        padding: 0.5rem 2rem;
+        margin-right: 1rem;
+        background: hsl(var(--primary));
+        border-radius: 0.5rem;
+        color: hsl(var(--primary-foreground));
+      }
+    </style>
+  </head>
+
+  <body>
+    <div
+      class="demo tg_sdk_ui_flex tg_sdk_ui_justify-center"
+      style="margin-top: 2rem"
+    >
+      <button onClick="window.TG_SDK_UI.openPayList()">Pay Lists</button>
+
+      <button onClick="payClick()">Pay</button>
+
+      <button
+        onClick="window.TG_SDK_UI.share({
+          text: '输入框内容',
+          cb: () => {
+            console.log('成功');
+          },
+        });
+        "
+      >
+        Share
+      </button>
+
+      <button onClick="loginClick()">Login</button>
+    </div>
+
+    <script src="../../packages//react-ui/dist/telegram-sdk-ui.js"></script>
+    <script>
+      window.TG_SDK_UI._setTelegramSDKConfig({
+        debug: true,
+        appid: '5EDhUSpJU9aV9NVZRx9UXg',
+        tonConfig: {
+          manifestUrl: `https://docbphqre6f8b.cloudfront.net/tonconnect-manifest.json`,
+        },
+      });
+
+      const payClick = () => {
+        console.log('pay click');
+        window.TG_SDK_UI.openPopupPay(
+          {
+            title: '首冲礼包',
+            message: '首冲礼包 ￥6 获得 xxx 钻石',
+            /**
+             * Stars 必须为整数
+             */
+            amount: '1',
+            /**
+             * 有概率支付失败，随机数可能会重复
+             */
+            order_id: String(Math.round(Math.random() * 10000)),
+            start: () => {
+              console.log('开始支付');
+            },
+            result: (status) => {
+              console.log('支付状态 status', status);
+            },
+          },
+          [
+            {
+              token: 'Ton',
+              amount: '0.01',
+            },
+            {
+              token: 'Stars',
+              amount: '1',
+            },
+          ]
+        );
+      };
+
+      const loginClick = () => {
+        window.TG_SDK_UI.login({
+          cb: ({ status, data }) => {
+            console.log(status, data);
+          },
+        });
+      };
+    </script>
+  </body>
+</html>
