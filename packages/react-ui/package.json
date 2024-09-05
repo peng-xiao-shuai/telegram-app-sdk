@@ -3,9 +3,21 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "dist/index.cjs.js",
+  "browser": "dist/telegram-sdk-ui.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.es.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.es.js",
+      "require": "./dist/index.cjs.js",
+      "browser": "./dist/telegram-sdk-ui.js",
+      "types": "./dist/index.es.d.ts"
+    }
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "rimraf dist && vite build && vite build --mode umd",
     "lint": "eslint .",
     "preview": "vite preview"
   },

@@ -4,8 +4,9 @@ import path from 'path';
 import dts from 'vite-plugin-dts';
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [
+export default defineConfig(({ mode }) => {
+  const isUMD = mode === 'umd';
+  const plugins = [
     react(),
     dts({
       insertTypesEntry: true,
@@ -16,40 +17,52 @@ export default defineConfig({
       bundledPackages: ['@telegram-sdk/ts-core'],
     }),
     cssInjectedByJsPlugin(),
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  envDir: path.resolve(__dirname, '../../'),
-  define: {
-    'process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || 'development'
-    ),
-  },
-  build: {
-    minify: true,
-    lib: {
-      entry: path.resolve(__dirname, 'src/index.ts'),
-      name: 'TG_SDK_UI',
-      formats: ['es', 'cjs', 'iife'],
-      fileName: (format) =>
-        format === 'iife' ? 'telegram-sdk-ui.js' : `index.${format}.js`,
-    },
-    rollupOptions: {
-      output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-        },
+  ];
+
+  if (isUMD) {
+    plugins.splice(1, 1);
+  }
+
+  return {
+    plugins,
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-    cssCodeSplit: false,
-  },
-  css: {
-    modules: {
-      localsConvention: 'camelCaseOnly',
+    envDir: path.resolve(__dirname, '../../'),
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(
+        process.env.NODE_ENV || 'development'
+      ),
     },
-  },
+    build: {
+      emptyOutDir: false,
+      lib: {
+        entry: path.resolve(__dirname, 'src/index.ts'),
+        name: 'TG_SDK_UI',
+        formats: isUMD ? ['umd'] : ['es', 'cjs'],
+        fileName: (format) =>
+          format === 'umd' ? 'telegram-sdk-ui.js' : `index.${format}.js`,
+      },
+      rollupOptions: {
+        external: isUMD ? [] : ['react', 'react-dom', 'react-dom/client'],
+        output: {
+          globals: isUMD
+            ? undefined
+            : {
+                react: 'React',
+                'react-dom': 'ReactDOM',
+                'react-dom/client': 'ReactDOMClient',
+              },
+        },
+      },
+      cssCodeSplit: false,
+    },
+    css: {
+      modules: {
+        localsConvention: 'camelCaseOnly',
+      },
+    },
+  };
 });

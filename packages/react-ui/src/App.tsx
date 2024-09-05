@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import { Button } from './components/ui/button';
-import { initializeTelegramSDK, TG_SDK_UI } from './index';
+import { initializeTelegramSDK, TG_SDK_UI } from '../dist/index.es';
 let isInitializedCopy = false;
 
 function App() {
@@ -11,7 +11,7 @@ function App() {
       try {
         if (isInitializedCopy) return;
         isInitializedCopy = true;
-        window.TG_SDK_UI = await initializeTelegramSDK(TG_SDK_UI, {
+        (window as any).TG_SDK_UI = await initializeTelegramSDK(TG_SDK_UI, {
           debug: true,
           appid: '5EDhUSpJU9aV9NVZRx9UXg',
           tonConfig: {
@@ -44,7 +44,7 @@ const Page = () => {
   const [isLogin, setIsLogin] = useState(false);
 
   useEffect(() => {
-    setIsLogin(!!window.TG_SDK_CORE?.Token);
+    setIsLogin(!!window.TG_SDK_UI?.Token);
   }, []);
   const click = () => {
     window.TG_SDK_UI.openPopupPay(
@@ -97,7 +97,10 @@ const Page = () => {
     <div className="tg_sdk_ui_max-w-[80vw] tg_sdk_ui_mx-auto tg_sdk_ui_pt-10">
       <div className="tg_sdk_ui_flex tg_sdk_ui_justify-center tg_sdk_ui_gap-4">
         <div>
-          <Button onClick={window.TG_SDK_UI.openPayList} disabled={!isLogin}>
+          <Button
+            onClick={() => window.TG_SDK_UI.openPayList()}
+            disabled={!isLogin}
+          >
             Pay Lists
           </Button>
         </div>
