@@ -162,10 +162,10 @@ class TG_SDK_UI extends TG_SDK_CORE {
     },
   ])
  */
-  openPopupPay = (
+  openPopupPay(
     options: TG_SDK_NAMESPACE.OpenPayPopupPayload,
     payTypes: PayListResponse['support_token']
-  ) => {
+  ) {
     try {
       this.PopupPayOptions = options;
 
@@ -193,7 +193,7 @@ class TG_SDK_UI extends TG_SDK_CORE {
     } catch (error) {
       throw this.onError('UI openPopupPay', error);
     }
-  };
+  }
 
   /**
    * @remarks 充值档位支付. 唤起充值档位弹窗
