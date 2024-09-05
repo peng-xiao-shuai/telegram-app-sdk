@@ -26,19 +26,6 @@ export default [{
       file: 'dist/telegram-sdk.js', // 初始化实例后，挂载在 window
       format: 'iife', // 使用 IIFE 以便在浏览器中直接运行
       name: 'TG_SDK',
-      banner: `
-        (function (global) {
-          if (typeof global.TG_SDK !== 'undefined') {
-            console.warn('TG_SDK is already defined. Overwriting existing instance.');
-          }
-      `,
-      footer: `
-          global._setTelegramSDKConfig = async (config) => {
-            window.TG_SDK = await TG_SDK.initializeTelegramSDK(TG_SDK.TG_SDK_CORE, config)
-            return window.TG_SDK
-          };
-        })(typeof window !== 'undefined' ? window : this);
-      `
     },
     {
       file: 'dist/index.esm.js',

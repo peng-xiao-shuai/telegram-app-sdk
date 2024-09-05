@@ -39,3 +39,17 @@ export const initializeTelegramSDK = <
     };
   });
 };
+
+/**
+ * @remarks 初始化 TG_SDK 函数，用于加载 Telegram-web.js
+ * @param {TG_SDK_NAMESPACE.Options} config SDK类型参数
+ */
+export const _setTelegramSDKConfig = async (
+  config: TG_SDK_NAMESPACE.Options
+) => {
+  (window as any).TG_SDK = await (window as any).TG_SDK.initializeTelegramSDK(
+    (window as any).TG_SDK.TG_SDK_CORE,
+    config
+  );
+  return (window as any).TG_SDK;
+};
