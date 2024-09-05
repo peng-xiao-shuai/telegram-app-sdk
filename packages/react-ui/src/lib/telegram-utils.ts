@@ -140,7 +140,7 @@ class TG_SDK_UI extends TG_SDK_CORE {
  * @param {TG_SDK_NAMESPACE.OpenPayPopupPayload} options
  * @param {PayListResponse['support_token']} payTypes 支付类型
  * @example
- * window.TG_SDK.openPayPopup({
+ * window.TG_SDK_UI.openPayPopup({
     message: '首冲礼包 ￥6 获得 xxx 钻石',
     amount: '1',
     order_id: String(Math.round(Math.random() * 10000)),
@@ -198,7 +198,7 @@ class TG_SDK_UI extends TG_SDK_CORE {
   /**
    * @remarks 充值档位支付. 唤起充值档位弹窗
    * @example
-   * window.TG_SDK.openPayList()
+   * window.TG_SDK_UI.openPayList()
    */
   async openPayList() {
     try {
@@ -225,7 +225,7 @@ class TG_SDK_UI extends TG_SDK_CORE {
    * @remarks 登录
    * @param {TG_SDK_NAMESPACE.LoginPayload} cb 登录回调函数
    * @example
-   * window.TG_SDK.login({
+   * window.TG_SDK_UI.login({
    *  cb: ({ status, data }) => {
    *    console.log(status, data)
    *  }
@@ -282,8 +282,8 @@ class TG_SDK_UI extends TG_SDK_CORE {
    * @remarks 分享
    * @param {Parameters<TG_SDK_NAMESPACE.SharePayload>[0]} payload
    * @example
-   * window.TG_SDK.share()
-   * window.TG_SDK.share({ text: '描述内容，这段内容会在输入框内', cb: (status) => {
+   * window.TG_SDK_UI.share()
+   * window.TG_SDK_UI.share({ text: '描述内容，这段内容会在输入框内', cb: (status) => {
    *  console.log(status)
    * }})
    */

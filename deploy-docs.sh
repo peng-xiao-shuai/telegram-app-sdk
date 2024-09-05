@@ -19,8 +19,7 @@ TEMP_DIR=$(mktemp -d)
 echo "Using temporary directory $TEMP_DIR"
 
 # 复制docs文件夹内容到临时目录
-mkdir -p $TEMP_DIR/$DOCS_FOLDER
-cp -r $DOCS_FOLDER/* $TEMP_DIR/$DOCS_FOLDER
+cp -r $DOCS_FOLDER/* $TEMP_DIR
 
 # 复制 README.md 到临时目录
 cp $README_FILE $TEMP_DIR

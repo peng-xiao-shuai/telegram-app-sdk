@@ -5,6 +5,8 @@
   "scripts": {
     "ts-core:dev": "pnpm run --filter {packages/ts-core} dev",
     "ts-core:build": "pnpm run --filter {packages/ts-core} build",
+    "ui:build": "pnpm run --filter {packages/react-ui} build",
+    "build": "pnpm ts-core:build && pnpm ui:build",
     "docs": "npx typedoc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
