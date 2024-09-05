@@ -20,5 +20,9 @@
     "./src",
     "./package.json",
     "vite.config.ts"
+  ],
+  "exclude": [
+    "./src/App.tsx",
+    "./src/main.tsx"
   ]
 }

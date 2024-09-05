@@ -2,7 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 import dts from 'vite-plugin-dts';
-import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
+import tailwindcss from 'tailwindcss';
+import autoprefixer from 'autoprefixer';
+// import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isUMD = mode === 'umd';
@@ -16,7 +18,7 @@ export default defineConfig(({ mode }) => {
       rollupTypes: true,
       bundledPackages: ['@telegram-sdk/ts-core'],
     }),
-    cssInjectedByJsPlugin(),
+    // cssInjectedByJsPlugin(),
   ];
 
   if (isUMD) {
@@ -63,6 +65,9 @@ export default defineConfig(({ mode }) => {
       modules: {
         localsConvention: 'camelCaseOnly',
       },
+    },
+    postcss: {
+      plugins: [tailwindcss(), autoprefixer()],
     },
   };
 });
