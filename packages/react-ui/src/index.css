@@ -58,6 +58,12 @@
   }
 }
 @layer base {
+  html.dark,
+  html.light {
+    body {
+      @apply tg_sdk_ui_bg-background tg_sdk_ui_text-foreground;
+    }
+  }
   * {
     @apply tg_sdk_ui_border-border;
   }
