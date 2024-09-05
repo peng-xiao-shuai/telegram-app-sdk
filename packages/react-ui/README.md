@@ -4,7 +4,7 @@
 
 `Telegram SDK` 是集成 `TelegramWebJs` 的基础合集
 
-### [查看更改日志](https://github.com/peng-xiao-shuai/telegram-sdk-docs/blob/gh-pages/CHANGELOG.md)
+### [查看更改日志](https://github.com/peng-xiao-shuai/telegram-sdk-docs/blob/gh-pages/packages/react-ui/CHANGELOG.md)
 
 ### 开始
 

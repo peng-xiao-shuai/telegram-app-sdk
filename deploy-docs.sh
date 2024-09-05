@@ -4,8 +4,9 @@
 REPO_URL="https://github.com/peng-xiao-shuai/telegram-sdk-docs.git"
 BRANCH="gh-pages" # 可以是你想要推送到的任何分支
 DOCS_FOLDER="docs"
-CHANGE_FILE="CHANGE.md"
 README_FILE="README.md"
+PACKAGES_FOLDER="packages"
+CHANGELOG_FILE="CHANGELOG.md"
 
 # 检查 DOCS_FOLDER 文件夹是否存在
 if [ ! -d "$DOCS_FOLDER" ]; then
@@ -18,12 +19,19 @@ TEMP_DIR=$(mktemp -d)
 echo "Using temporary directory $TEMP_DIR"
 
 # 复制docs文件夹内容到临时目录
-cp -r $DOCS_FOLDER/* $TEMP_DIR
+mkdir -p $TEMP_DIR/$DOCS_FOLDER
+cp -r $DOCS_FOLDER/* $TEMP_DIR/$DOCS_FOLDER
 
-# 复制 CHANGE.md 到临时目录
-cp $CHANGE_FILE $TEMP_DIR
 # 复制 README.md 到临时目录
 cp $README_FILE $TEMP_DIR
+
+# 复制 packages 下的子文件夹中的 CHANGELOG.md 文件到临时目录，同时保留文件结构
+for dir in $PACKAGES_FOLDER/*/; do
+  if [ -f "$dir$CHANGELOG_FILE" ]; then
+    mkdir -p $TEMP_DIR/$dir
+    cp "$dir$CHANGELOG_FILE" $TEMP_DIR/$dir
+  fi
+done
 
 # 进入临时目录并初始化Git仓库
 cd $TEMP_DIR
