@@ -2,11 +2,11 @@ import {
   type TG_SDK_NAMESPACE,
   type CreateOrderResponse,
   PayListResponse,
+  TG_SDK_CORE,
 } from '@telegram-sdk/ts-core';
 import { PayTypePopup } from '@/components/PayTypesPopup';
 import { PayListPopup } from '@/components/PayListPopup';
 import { reactRenderer } from './react-renderer';
-import { TG_SDK_CORE } from '@telegram-sdk/ts-core';
 import { version } from '../../package.json';
 
 /**
@@ -105,14 +105,17 @@ class TG_SDK_UI extends TG_SDK_CORE {
       this.PopupPayOptions?.start?.(payItem);
       switch (payItem.token) {
         case 'Ton':
+        case 'Usdt':
           /**
            * 是否链接，已连接直接支付
            */
           if (this.tonConnectUI.connected) {
-            this.tonTransaction(response!);
+            if (payItem.token == 'Ton') this.tonTransaction(response!);
+            else this.tonChainUsdtTransaction(response!);
           } else {
             await this.connect();
-            this.tonTransaction(response!);
+            if (payItem.token == 'Ton') this.tonTransaction(response!);
+            else this.tonChainUsdtTransaction(response!);
           }
           break;
         case 'Stars':
@@ -127,8 +130,6 @@ class TG_SDK_UI extends TG_SDK_CORE {
           }
           this.starsTransaction(response!);
           break;
-        case 'Usdt':
-        // TODO USDT
       }
     } catch (error) {
       throw this.onError('UI PopupPayCallback', error);
