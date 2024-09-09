@@ -1,7 +1,8 @@
 import { TonConnectUI, TonConnectUiCreateOptions } from '@tonconnect/ui';
 import { CHAIN } from '@tonconnect/sdk';
-import { beginCell } from '@ton/core';
+import { beginCell, Address, toNano } from '@ton/core';
 import { version } from '../package.json';
+import { TonClient } from 'ton';
 
 /**
  * @remarks TG_SDK 类中所需的类型命名空间
@@ -101,6 +102,23 @@ interface CreateOrderResponse {
    * @remarks Ton 支付时为收款地址，Stars 时为发票链接
    */
   recharge_address: string;
+
+  /**
+   * @remarks USDT 支付数额
+   */
+  amout: string;
+  /**
+   * @remarks USDT 合约地址
+   */
+  contract_address: string;
+  /**
+   * @remarks 精度
+   */
+  contract_wei: number;
+  /**
+   * @remarks 是否口开启测试链
+   */
+  is_test: true;
 }
 
 /**
@@ -149,6 +167,11 @@ class TG_SDK {
    */
   readonly tonConnectUI: TonConnectUI;
 
+  /**
+   * @remarks TonClient 实例
+   */
+  readonly tonClient: TonClient;
+
   version: string;
 
   /**
@@ -189,6 +212,13 @@ class TG_SDK {
     this.isTG = !!window.Telegram?.WebApp.initData;
 
     this.payOptions = undefined;
+
+    // 创建 TonClient 实例
+    this.tonClient = new TonClient({
+      endpoint: `https://${
+        this.debug ? 'testnet' : 'mainnet'
+      }.toncenter.com/api/v2/jsonRPC`,
+    });
   }
 
   /**
@@ -292,7 +322,7 @@ class TG_SDK {
           messages: [
             {
               address: response?.recharge_address,
-              amount: this.toNanoTon(this.payOptions!.amount),
+              amount: this.toNanoWei(this.payOptions!.amount),
               payload: beginCell()
                 .storeUint(0, 32)
                 // 设置消息
@@ -330,9 +360,122 @@ class TG_SDK {
     });
   }
 
-  private toNanoTon(amountInToncoin: string | number) {
-    const NANOTON_PER_TONCOIN = 1_000_000_000;
-    return (Number(amountInToncoin) * NANOTON_PER_TONCOIN).toString();
+  /**
+   * @remarks ton 支付
+   * @param {CreateOrderResponse} response
+   * @example
+     window.TG_SDK.tonChainUsdtTransaction({
+      invoice_code: 'Hello Word!',
+      recharge_address: '0QB4bOw8W7eNXp6fhMZNiivCiNxvZDF2sRRz6MtDyiMUUc-n',
+      amout: "1",
+      contract_address: "kQCTbNrH_ddAL48e87HIu7-6kQnGWHpJdcwwfX5c0LROQrHi",
+      contract_wei: 6,
+      invoice_code: "CE8t2BfsJHHqgB41cdSWqM",
+      is_test: true,
+      recharge_address: "0QA4lgvi12S5VWWBk6ThaERiYbkwFIK0bp2fZGy9s5aEXeIU"
+     })
+   */
+  tonChainUsdtTransaction(
+    response: CreateOrderResponse
+  ): Promise<
+    Parameters<NonNullable<TG_SDK_NAMESPACE.OpenPayPopupPayload['result']>>[0]
+  > {
+    return new Promise(async (resolve) => {
+      try {
+        // jetton master
+        const masterAddress = Address.parse(response.contract_address);
+        // 调用合约方法
+        const { stack } = await this.tonClient.runMethod(
+          masterAddress,
+          'get_wallet_address',
+          [
+            {
+              type: 'slice',
+              // @ts-ignore
+              cell: beginCell().storeAddress(this.TonOwner).endCell(),
+            },
+          ]
+        );
+        // 读取结果
+        const jettonWalletAddress = stack.readAddress().toString();
+
+        const { boc } = await this.tonConnectUI.sendTransaction({
+          validUntil: Math.floor(Date.now() / 1000) + 600,
+          messages: [
+            {
+              /**
+               * @remarks 这里是以当前链接的钱包 并且是某个合约（jetton master）下创建的钱包（jetton wallet)
+               * 例如以 测试网 kQCTbNrH_ddAL48e87HIu7-6kQnGWHpJdcwwfX5c0LROQrHi 合约为例
+               * 你的钱包中需要存在 kQCTbNrH_ddAL48e87HIu7-6kQnGWHpJdcwwfX5c0LROQrHi 货币
+               * 以我的钱包为例在 https://testnet.tonviewer.com/0QBByz6dwwnmzdaPAEbqrw4KKZ8cvj-HYp2QH16Z3G95gNrU/jetton/kQCTbNrH_ddAL48e87HIu7-6kQnGWHpJdcwwfX5c0LROQrHi 中可以看到我的 jetton wallet
+               * 可以看到我的钱包 jetton wallet 为 kQBXncTf7Y5rZEf-kbEMFmr4Wkdu_njys-H04ooYPLMl4mtQ
+               *
+               * 或者在主网上使用合约的方法
+               * https://tonviewer.com/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs?section=method
+               * 调用 get_wallet_address 传入钱包地址可以获得相应的 jetton wallet
+               */
+              address: jettonWalletAddress,
+              amount: this.toNanoWei(0.1),
+              payload: beginCell()
+                .storeUint(0xf8a7ea5, 32)
+                .storeUint(0, 64)
+                // * 10 ** 6
+                .storeCoins(
+                  Number(this.toNanoWei(response.amout, response.contract_wei))
+                )
+                /**
+                 * @remarks 这里是将货币发送到某个钱包中
+                 */
+                .storeAddress(Address.parse(response.recharge_address))
+                /**
+                 * @remarks 如果在交易的过程中有超出的费用会退回到的钱包地址
+                 */
+                .storeAddress(this.TonOwner) // Platform receiving address
+                .storeUint(0, 1) // custom_payload:(Maybe ^Cell)
+                .storeCoins(toNano(0.05)) // forward_ton_amount:(VarUInteger 16)
+                .storeUint(1, 1)
+                .storeRef(
+                  beginCell()
+                    .storeUint(0, 32)
+                    // 设置消息
+                    .storeStringTail(response?.invoice_code)
+                    .endCell()
+                )
+                .endCell()
+                .toBoc()
+                .toString('base64'),
+            },
+          ],
+        });
+
+        log('支付状态 paid');
+        this.payOptions?.result?.({
+          status: 'paid',
+          extra: this.payOptions?.extra,
+        });
+        this.WebApp.HapticFeedback.notificationOccurred('success');
+        resolve({
+          status: 'paid',
+          extra: this.payOptions?.extra,
+        });
+      } catch (error) {
+        log('支付状态 failed');
+        this.payOptions?.result?.({
+          status: 'failed',
+          extra: this.payOptions.extra,
+        });
+        resolve({
+          status: 'failed',
+          extra: this.payOptions?.extra,
+        });
+        this.WebApp.HapticFeedback.notificationOccurred('error');
+        throw this.onError('tonTransaction', error);
+      }
+    });
+  }
+
+  private toNanoWei(amountInToncoin: string | number, WEI: number = 9) {
+    return (Number(amountInToncoin) * 10 ** WEI).toString();
   }
   /**
    * @remarks 获取 TG 进入时 Start 携带的参数信息
@@ -362,6 +505,13 @@ class TG_SDK {
     return localStorage.getItem(this.params.tokenKey!) || '';
   }
 
+  private get TonOwner(): Address {
+    return Address.parse(this.tonConnectUI.account!.address);
+  }
+
+  /**
+   * @remarks 错误抛出，并且在 this.debug 为 false 时没有控制台打印
+   */
   onError(funName: string, error: unknown) {
     log(funName + '错误', error);
 
