@@ -1,4 +1,4 @@
-## @telegram-sdk/ui
+## @telegram-sdk/ui v1.0.0-rc.1
 
 ## 以 Core 包为基础，补充业务逻辑
 

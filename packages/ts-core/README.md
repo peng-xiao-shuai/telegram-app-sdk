@@ -1,4 +1,4 @@
-## @telegram-sdk/core
+## @telegram-sdk/core v1.0.1-rc.1
 
 ## 此包为 Core 包只涉及核心逻辑，不涉及业务
 

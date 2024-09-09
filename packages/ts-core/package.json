@@ -1,6 +1,6 @@
 {
   "name": "@telegram-sdk/core",
-  "version": "1.0.1-rc.0",
+  "version": "1.0.1-rc.1",
   "private": true,
   "main": "dist/index.cjs.js",
   "browser": "dist/telegram-sdk.js",
@@ -25,7 +25,8 @@
     "@ton/core": "^0.56.3",
     "@tonconnect/sdk": "^3.0.5",
     "@tonconnect/ui": "^2.0.6",
-    "ton": "^13.9.0"
+    "ton": "^13.9.0",
+    "tonweb": "^0.0.66"
   },
   "devDependencies": {
     "dotenv": "^16.4.5",

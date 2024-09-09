@@ -1,5 +1,36 @@
 ## @telegram/core 更新记录
 
+## 1.0.1-rc.1
+
+- `[Type]:` `CreateOrderResponse` 函数类型更新
+
+```diff
+interface CreateOrderResponse {
+  invoice_code: string;
+  recharge_address: string;
++  /**
++   * @remarks USDT 支付数额
++   */
++  amout: string;
++  /**
++   * @remarks USDT 合约地址
++   */
++  contract_address: string;
++  /**
++   * @remarks 精度
++   */
++  contract_wei: number;
++  /**
++   * @remarks 是否口开启测试链
++   */
++  is_test: true;
+}
+```
+
+- `[Feat]:`
+- - `TG_SDK_UI` 实例新增只读属性 `tonClient`
+- - `TG_SDK_UI` 实例新增函数 `tonChainUsdtTransaction` （`Ton` 链的 `USDT` 支付方式）
+
 ### 1.0.1-rc.0
 
 删除大量类型以及函数，以保证 `core` 包的功能纯粹，不涉及业务逻辑
@@ -14,7 +45,7 @@
 - - 新增类型 `PayTypes` 声明了可用的支付类型
 - - 新增类型 `CreateOrderResponse` 创建订单返回的数据
 - - `PayListResponse` 支付档位返回的数据
-- `[PREF]:` 更改调用 `_setTelegramSDKConfig` 方式，从 `window._setTelegramSDKConfig` 改为 `window.TG_SDK._setTelegramSDKConfig`
+- `[Perf]:` 更改调用 `_setTelegramSDKConfig` 方式，从 `window._setTelegramSDKConfig` 改为 `window.TG_SDK._setTelegramSDKConfig`
 - `[DOCS]:` 原来 `TG_SDK` 在文档中变成 `TG_SDK_CORE`
 
 ### 1.0.0-rc-20240828173814
