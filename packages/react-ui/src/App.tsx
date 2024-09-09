@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import { Button } from './components/ui/button';
-import { initializeTelegramSDK, TG_SDK_UI } from '../dist/index.es';
+import { _setTelegramSDKConfig } from './index';
 let isInitializedCopy = false;
 
 function App() {
@@ -11,8 +11,7 @@ function App() {
       try {
         if (isInitializedCopy) return;
         isInitializedCopy = true;
-        (window as any).TG_SDK_UI = await initializeTelegramSDK(TG_SDK_UI, {
-          debug: true,
+        (window as any).TG_SDK_UI = await _setTelegramSDKConfig({
           appid: '5EDhUSpJU9aV9NVZRx9UXg',
           tonConfig: {
             manifestUrl: `https://docbphqre6f8b.cloudfront.net/tonconnect-manifest.json`,
@@ -50,7 +49,7 @@ const Page = () => {
     window.TG_SDK_UI.openPopupPay(
       {
         title: '首冲礼包',
-        message: '首冲礼包 ￥6 获得 xxx 钻石',
+        message: 'USDT xxx 钻石',
         /**
          * Stars 必须为整数
          */
@@ -58,7 +57,7 @@ const Page = () => {
         /**
          * 有概率支付失败，随机数可能会重复
          */
-        order_id: String(Math.round(Math.random() * 10000)),
+        order_id: String(Math.round(Math.random() * 100000)),
         start: () => {
           console.log('开始支付');
         },
@@ -73,6 +72,10 @@ const Page = () => {
         },
         {
           token: 'Stars',
+          amount: '1',
+        },
+        {
+          token: 'Usdt',
           amount: '1',
         },
       ]
