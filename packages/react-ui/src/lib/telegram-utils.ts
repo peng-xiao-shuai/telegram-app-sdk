@@ -89,18 +89,34 @@ class TG_SDK_UI extends TG_SDK_CORE {
     payItem: PayListResponse['support_token'][number]
   ) => {
     try {
+      if (!['PAY', 'PAY_LIST'].includes(this.PopupPayOptions!.type)) {
+        throw new Error(
+          "PopupPayOptions.type error type can only be 'PAY' or 'PAY_LIST'. The current type is " +
+            this.PopupPayOptions!.type
+        );
+      }
+
       this.WebApp.HapticFeedback.impactOccurred('light');
-      const response = await this.fetchRequest<CreateOrderResponse>(
-        '/saasapi/jssdk/pay/v1/custom_order',
-        {
-          title: this.PopupPayOptions!.title,
-          description: this.PopupPayOptions!.message,
-          order_id: this.PopupPayOptions!.order_id,
-          amount: this.PopupPayOptions!.amount,
+      let response: CreateOrderResponse;
+      if (this.PopupPayOptions?.type === 'PAY') {
+        response = await this.fetchRequest(
+          '/saasapi/jssdk/pay/v1/custom_order',
+          {
+            title: this.PopupPayOptions!.title,
+            description: this.PopupPayOptions!.message,
+            order_id: this.PopupPayOptions!.order_id,
+            amount: this.PopupPayOptions!.amount,
+            extra: this.PopupPayOptions!.extra || '',
+            token: payItem.token,
+          }
+        );
+      } else if (this.PopupPayOptions?.type === 'PAY_LIST') {
+        response = await this.fetchRequest('/saasapi/jssdk/pay/v1/item_order', {
+          item_id: this.PopupPayOptions!.item_id,
           extra: this.PopupPayOptions!.extra || '',
           token: payItem.token,
-        }
-      );
+        });
+      }
 
       this.PopupPayOptions?.start?.(payItem);
       switch (payItem.token) {
@@ -155,20 +171,21 @@ class TG_SDK_UI extends TG_SDK_CORE {
   [
     {
       token: 'Ton',
-      amount: '0.01',
     },
     {
       token: 'Stars',
-      amount: '1',
     },
   ])
  */
   openPopupPay(
-    options: TG_SDK_NAMESPACE.OpenPayPopupPayload,
+    options: Omit<TG_SDK_NAMESPACE.OpenPayPopupParams, 'type'>,
     payTypes: PayListResponse['support_token']
   ) {
     try {
-      this.PopupPayOptions = options;
+      this.PopupPayOptions = {
+        type: 'PAY',
+        ...options,
+      };
 
       const StarsIndex = payTypes.findIndex((item) => item.token === 'Stars');
       /**
@@ -199,9 +216,21 @@ class TG_SDK_UI extends TG_SDK_CORE {
   /**
    * @remarks 充值档位支付. 唤起充值档位弹窗
    * @example
-   * window.TG_SDK_UI.openPayList()
+     window.TG_SDK_UI.openPayList({
+       start: () => {
+         console.log('开始支付');
+       },
+       result: (status) => {
+         console.log('支付状态 status', status);
+       }
+     })
    */
-  async openPayList() {
+  async openPayList(
+    options: Omit<
+      TG_SDK_NAMESPACE.OpenPayListPopupParams,
+      'type' | 'item_id' | 'title' | 'message'
+    >
+  ) {
     try {
       const response = await this.fetchRequest<{
         list: PayListResponse[];
@@ -213,6 +242,11 @@ class TG_SDK_UI extends TG_SDK_CORE {
         }
       );
 
+      this.PopupPayOptions = {
+        type: 'PAY_LIST',
+        item_id: '',
+        ...options,
+      };
       reactRenderer.render(PayListPopup, {
         list: response.list,
         callback: this.PopupPayCallback,
