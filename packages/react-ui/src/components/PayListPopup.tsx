@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { ComponentProps, type FC, memo, useCallback, useState } from 'react';
 import { Button } from './ui/button';
-import { PayListResponse } from '@telegram-sdk/ts-core';
+import type { PayListResponse, TG_SDK_NAMESPACE } from '@telegram-sdk/ts-core';
 import { DialogPayContent } from './PayTypesPopup';
 
 const PayListItem: FC<{
@@ -44,6 +44,11 @@ export const PayListPopup: FC<{
 
   const handleItemClick = useCallback(
     (item: PayListResponse) => {
+      window.TG_SDK_UI.PopupPayOptions = {
+        ...(window.TG_SDK_UI
+          .PopupPayOptions! as TG_SDK_NAMESPACE.OpenPayListPopupParams),
+        item_id: item.id,
+      };
       setPayContentData({
         title: item.title,
         desc: item.description,

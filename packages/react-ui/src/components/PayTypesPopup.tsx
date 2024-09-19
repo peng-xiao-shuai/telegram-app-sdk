@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { type FC, useState } from 'react';
 import { Button } from './ui/button';
-import { PayListResponse } from '@telegram-sdk/ts-core';
+import type { PayListResponse } from '@telegram-sdk/ts-core';
 
 export const DialogPayContent: FC<{
   title: string;
@@ -32,7 +32,9 @@ export const DialogPayContent: FC<{
               callback(item);
             }}
           >
-            {item.token}
+            <b>
+              {item.amount} {item.token}
+            </b>
           </Button>
         ))}
       </div>
