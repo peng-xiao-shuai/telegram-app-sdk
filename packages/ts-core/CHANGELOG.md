@@ -1,5 +1,22 @@
 ## @telegram/core 更新记录
 
+## 1.0.1-rc.2
+
+- `[Type]:` `PayListResponse` 类型更新
+
+```diff
+interface PayListResponse {
+  id: string;
+  title: string;
+  description: string;
+  dollar_amount: string;
+-  support_token: { token: TG_SDK_NAMESPACE.PayTypes; amount: string }[];
++  support_token: { token: TG_SDK_NAMESPACE.PayTypes; amount?: string }[];
+}
+```
+
+- `[Type]:` 添加类型 `OpenPayPopupParams` `OpenPayListPopupParams` 用于区分支付弹窗
+
 ## 1.0.1-rc.1
 
 - `[Type]:` `CreateOrderResponse` 函数类型更新

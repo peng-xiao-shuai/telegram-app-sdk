@@ -1,6 +1,6 @@
 {
   "name": "@telegram-sdk/core",
-  "version": "1.0.1-rc.1",
+  "version": "1.0.1-rc.2",
   "private": true,
   "main": "dist/index.cjs.js",
   "browser": "dist/telegram-sdk.js",

@@ -29,7 +29,7 @@ pnpm dev
 pnpm build
 ```
 
-进入 example/html/index.html 文件，更改
+进入 `example/html/index.html` 文件，更改
 
 ```diff
 - <link rel="stylesheet" href="../../packages/react-ui/dist/style.css" /> // line 7
