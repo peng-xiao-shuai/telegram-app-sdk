@@ -48,26 +48,12 @@ cancelled）
    */
   export type InvoiceStatus = 'paid' | 'cancelled' | 'failed' | 'pending';
 
-  /**
-   * @remarks 打开支付弹窗
-   */
-  export interface OpenPayPopupPayload {
+  interface OpenPayBaseParams {
     /**
-     * @remarks 要在弹出标题中显示的文本，0-64 个字符。
+     * @remarks 当前支付弹窗类型
+     * @default 'PAY'
      */
-    title: string;
-    /**
-     * @remarks 要在弹出窗口正文中显示的消息，1-256 个字符。
-     */
-    message: string;
-    /**
-     * @remarks 订单id
-     */
-    order_id: string;
-    /**
-     * @remarks 需要支付的 Ton 币数量 或者 Stars 数量 （Stars 时为正整数）
-     */
-    amount: string;
+    type?: 'PAY' | 'PAY_LIST';
     /**
      * @remarks 扩展信息
      * @default '''
@@ -88,6 +74,21 @@ cancelled）
       extra: string | undefined;
     }) => void;
   }
+  export interface OpenPayPopupParams extends OpenPayBaseParams {
+    type: 'PAY';
+    title: string;
+    message: string;
+    order_id: string;
+    amount: string;
+  }
+  export interface OpenPayListPopupParams extends OpenPayBaseParams {
+    type: 'PAY_LIST';
+    item_id: string;
+  }
+  /**
+   * @remarks 打开支付弹窗载荷
+   */
+  export type OpenPayPopupPayload = OpenPayPopupParams | OpenPayListPopupParams;
 }
 
 /**
@@ -144,7 +145,7 @@ interface PayListResponse {
   /**
    * @remarks 支持支付方式
    */
-  support_token: { token: TG_SDK_NAMESPACE.PayTypes; amount: string }[];
+  support_token: { token: TG_SDK_NAMESPACE.PayTypes; amount?: string }[];
 }
 
 let { log } = window.console;
@@ -322,7 +323,7 @@ class TG_SDK {
           messages: [
             {
               address: response?.recharge_address,
-              amount: this.toNanoWei(this.payOptions!.amount),
+              amount: this.toNanoWei(response.amout),
               payload: beginCell()
                 .storeUint(0, 32)
                 // 设置消息
