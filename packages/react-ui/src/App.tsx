@@ -68,15 +68,12 @@ const Page = () => {
       [
         {
           token: 'Ton',
-          amount: '0.01',
         },
         {
           token: 'Stars',
-          amount: '1',
         },
         {
           token: 'Usdt',
-          amount: '1',
         },
       ]
     );
@@ -101,7 +98,16 @@ const Page = () => {
       <div className="tg_sdk_ui_flex tg_sdk_ui_justify-center tg_sdk_ui_gap-4">
         <div>
           <Button
-            onClick={() => window.TG_SDK_UI.openPayList()}
+            onClick={() =>
+              window.TG_SDK_UI.openPayList({
+                start: () => {
+                  console.log('开始支付');
+                },
+                result: (status) => {
+                  console.log('支付状态 status', status);
+                },
+              })
+            }
             disabled={!isLogin}
           >
             Pay Lists
